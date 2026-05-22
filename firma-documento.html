@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enviar Documento a Firmar | REMAX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design tokens (extraídos del sitio remax.com.ar) ── */
+    :root {
+      --color-primary:         #003da5;
+      --color-primary-dark1:   #003399;
+      --color-primary-light1:  #1546b1;
+      --color-secondary:       #dc1c2f;
+      --color-secondary-dark1: #cf1128;
+      --color-grey-nero:       #353535;
+      --color-grey-wolf:       #595959;
+      --color-grey-silver:     #7e7e7e;
+      --color-grey-iron:       #b2b2b2;
+      --color-grey-unicorn:    #e7e7e7;
+      --color-grey-silk:       #f2f2f2;
+      --color-grey-cloud:      #f9f9f9;
+      --color-background:      #fafafa;
+      --color-white:           #ffffff;
+      --color-error:           #b00020;
+      --color-correct:         #138a3d;
+      --topbar-height:         76px;
+      --radius-sm:             6px;
+      --radius-md:             10px;
+      --radius-lg:             16px;
+      --shadow-card:           0 2px 12px rgba(0, 61, 165, 0.10);
+      --shadow-card-hover:     0 6px 24px rgba(0, 61, 165, 0.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--color-background);
+      color: var(--color-grey-nero);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ───────── HEADER ───────── */
+    .topbar-red {
+      background: var(--color-secondary);
+      height: 4px;
+    }
+
+    header {
+      background: var(--color-white);
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* RE/MAX SVG balloon logo */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-balloon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--color-grey-nero);
+    }
+    .logo-text span { color: var(--color-primary); }
+
+    .header-subtitle {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-grey-wolf);
+      letter-spacing: 0.5px;
+    }
+
+    /* ───────── MAIN ───────── */
+    main {
+      flex: 1;
+      padding: 40px 24px 60px;
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ───────── PAGE TITLE ───────── */
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-size: 1.625rem;
+      font-weight: 700;
+      color: var(--color-grey-nero);
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      font-size: 0.9rem;
+      color: var(--color-grey-wolf);
+      font-weight: 500;
+    }
+
+    /* ───────── STEP INDICATOR ───────── */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 32px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: background 0.25s, color 0.25s, border-color 0.25s;
+      border: 2px solid var(--color-grey-iron);
+      background: var(--color-white);
+      color: var(--color-grey-iron);
+    }
+
+    .step.active .step-num {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    .step.done .step-num {
+      background: var(--color-correct);
+      border-color: var(--color-correct);
+      color: var(--color-white);
+    }
+
+    .step-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-grey-iron);
+      transition: color 0.25s;
+    }
+
+    .step.active .step-label { color: var(--color-primary); }
+    .step.done  .step-label { color: var(--color-correct); }
+
+    .step-divider {
+      flex: 0.5;
+      height: 2px;
+      background: var(--color-grey-unicorn);
+      margin: 0 4px;
+    }
+
+    /* ───────── CARD ───────── */
+    .card {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 32px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--color-primary-light1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-title-icon svg { width: 18px; height: 18px; fill: var(--color-white); }
+
+    /* ───────── FORM ELEMENTS ───────── */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-grey-wolf);
+      margin-bottom: 6px;
+    }
+
+    .required-star { color: var(--color-secondary); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="file"] {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid var(--color-grey-unicorn);
+      border-radius: var(--radius-md);
+      padding: 0 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-grey-nero);
+      background: var(--color-white);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.12);
+    }
+
+    input.error {
+      border-color: var(--color-error);
+      box-shadow: 0 0 0 3px rgba(176, 0, 32, 0.1);
+    }
+
+    .field-error {
+      font-size: 0.75rem;
+      color: var(--color-error);
+      font-weight: 500;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .field-error.visible { display: block; }
+
+    /* File input custom */
+    .file-input-wrap {
+      position: relative;
+    }
+
+    input[type="file"] {
+      padding: 0;
+      cursor: pointer;
+      height: auto;
+      padding: 11px 14px;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: var(--color-primary);
+      color: var(--color-white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 12px;
+      transition: background 0.2s;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: var(--color-primary-dark1);
+    }
+
+    .file-hint {
+      font-size: 0.75rem;
+      color: var(--color-grey-silver);
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    /* Number input */
+    .number-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .number-input-wrap input[type="number"] {
+      width: 120px;
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .number-input-wrap input[type="number"]::-webkit-inner-spin-button,
+    .number-input-wrap input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .number-input-wrap input[type="number"] { -moz-appearance: textfield; }
+
+    .btn-stepper {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--color-primary);
+      background: transparent;
+      color: var(--color-primary);
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .btn-stepper:hover {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    /* ───────── FIRMANTE CARD ───────── */
+    .signer-card {
+      background: var(--color-grey-cloud);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--color-primary);
+      position: relative;
+    }
+
+    .signer-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .signer-badge {
+      background: var(--color-primary);
+      color: var(--color-white);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .signer-name-preview {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-grey-wolf);
+    }
+
+    .signer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .signer-grid .form-group { margin-bottom: 0; }
+
+    .span-full { grid-column: 1 / -1; }
+
+    /* ───────── BUTTONS ───────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 48px;
+      padding: 0 28px;
+      background: var(--color-primary);
+      color: var(--color-white);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 61, 165, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--color-primary-dark1);
+      box-shadow: 0 4px 16px rgba(0, 61, 165, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-primary:disabled {
+      background: var(--color-grey-iron);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-send {
+      background: var(--color-secondary);
+      box-shadow: 0 2px 8px rgba(220, 28, 47, 0.25);
+    }
+
+    .btn-send:hover {
+      background: var(--color-secondary-dark1);
+      box-shadow: 0 4px 16px rgba(220, 28, 47, 0.35);
+    }
+
+    .btn-send:disabled {
+      background: var(--color-grey-iron);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .btn-full { width: 100%; }
+
+    /* Loading spinner dentro del botón */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ───────── MODAL ───────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 19, 35, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: 40px 36px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-icon {
+      width: 72px;
+      height: 72px;
+      background: #e5ffee;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .modal-icon svg { width: 36px; height: 36px; }
+
+    .modal h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-grey-nero);
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      font-size: 0.9rem;
+      color: var(--color-grey-wolf);
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .modal p strong {
+      color: var(--color-primary);
+    }
+
+    /* ───────── FOOTER ───────── */
+    footer {
+      background: var(--color-grey-nero);
+      color: var(--color-grey-iron);
+      text-align: center;
+      padding: 20px 24px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    footer a { color: var(--color-grey-iron); text-decoration: none; }
+
+    /* ───────── RESPONSIVE ───────── */
+    @media (max-width: 600px) {
+      :root { --topbar-height: 56px; }
+
+      main { padding: 24px 16px 48px; }
+
+      .card { padding: 20px 16px; }
+
+      .signer-grid { grid-template-columns: 1fr; }
+
+      .span-full { grid-column: 1; }
+
+      .page-header h1 { font-size: 1.25rem; }
+
+      .steps { gap: 4px; }
+      .step-label { display: none; }
+      .step-divider { flex: 0.3; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Red accent bar (exactamente como remax.com.ar) -->
+  <div class="topbar-red"></div>
+
+  <!-- ─── HEADER ─── -->
+  <header>
+    <div class="header-inner">
+      <a href="#" class="logo-wrap">
+        <!-- RE/MAX balloon SVG (tricolor: azul, blanco, rojo) -->
+        <svg class="logo-balloon" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="18" cy="16" rx="14" ry="14" fill="#003da5"/>
+          <ellipse cx="18" cy="16" rx="9"  ry="14" fill="#ffffff"/>
+          <ellipse cx="18" cy="16" rx="4"  ry="14" fill="#dc1c2f"/>
+          <!-- cuerda del globo -->
+          <path d="M18 30 Q19 32 18 35" stroke="#595959" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="logo-text">RE<span>/</span>MAX</div>
+        </div>
+      </a>
+      <span class="header-subtitle">Gestión de Documentos</span>
+    </div>
+  </header>
+
+  <!-- ─── MAIN ─── -->
+  <main>
+    <div class="page-header">
+      <h1>Enviar Documento a Firmar</h1>
+      <p>Cargá el documento y completá los datos de cada firmante.</p>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="steps" id="steps">
+      <div class="step active" id="step-1">
+        <div class="step-num">1</div>
+        <span class="step-label">Documento</span>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step" id="step-2">
+        <div class="step-num">2</div>
+        <span class="step-label">Firmantes</span>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <span class="step-label">Envío</span>
+      </div>
+    </div>
+
+    <!-- ─── CARD 1: Documento ─── -->
+    <div class="card" id="card-documento">
+      <div class="card-title">
+        <div class="card-title-icon">
+          <!-- Document icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/>
+          </svg>
+        </div>
+        Documento a firmar
+      </div>
+
+      <div class="form-group">
+        <label for="documento">Seleccionar archivo <span class="required-star">*</span></label>
+        <div class="file-input-wrap">
+          <input type="file" id="documento" accept=".pdf,.doc,.docx" />
+        </div>
+        <p class="file-hint">Formatos aceptados: PDF, DOC, DOCX. Tamaño máximo: 20 MB.</p>
+        <span class="field-error" id="error-documento">Por favor seleccioná un documento.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="cantidad-firmantes">Cantidad de firmantes <span class="required-star">*</span></label>
+        <div class="number-input-wrap">
+          <button class="btn-stepper" id="btn-menos" type="button" aria-label="Restar firmante">−</button>
+          <input type="number" id="cantidad-firmantes" value="1" min="1" max="10" readonly />
+          <button class="btn-stepper" id="btn-mas" type="button" aria-label="Agregar firmante">+</button>
+        </div>
+        <span class="field-error" id="error-firmantes">Debe haber al menos 1 firmante.</span>
+      </div>
+    </div>
+
+    <!-- ─── CARD 2: Firmantes (generados dinámicamente) ─── -->
+    <div class="card" id="card-firmantes">
+      <div class="card-title">
+        <div class="card-title-icon">
+          <!-- People icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+        </div>
+        Datos de los firmantes
+      </div>
+      <div id="firmantes-container">
+        <!-- Los firmantes se insertan aquí dinámicamente -->
+      </div>
+    </div>
+
+    <!-- ─── ACCIÓN: Enviar ─── -->
+    <div class="action-bar">
+      <button class="btn-primary btn-send btn-full" id="btn-enviar" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z" fill="currentColor"/>
+        </svg>
+        Enviar para firmar
+      </button>
+    </div>
+  </main>
+
+  <!-- ─── MODAL ÉXITO ─── -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="11" fill="#138a3d" opacity="0.15"/>
+          <path d="M6 12l4 4 8-8" stroke="#138a3d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 id="modal-title">¡Documento enviado!</h2>
+      <p id="modal-body">
+        El documento fue enviado correctamente.<br/>
+        Los firmantes recibirán una notificación por <strong>email</strong> con las instrucciones para completar la firma.
+      </p>
+      <button class="btn-primary btn-full" id="btn-modal-cerrar" type="button">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    &copy; <span id="year"></span> REMAX Argentina &mdash;
+    <a href="https://www.remax.com.ar/">www.remax.com.ar</a>
+  </footer>
+
+  <!-- ─── JAVASCRIPT ─── -->
+  <script>
+    'use strict';
+
+    /* ── Año actual en footer ── */
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    /* ── Estado ── */
+    const state = {
+      cantidadFirmantes: 1,
+    };
+
+    /* ── Referencia a elementos ── */
+    const cantidadInput      = document.getElementById('cantidad-firmantes');
+    const btnMenos           = document.getElementById('btn-menos');
+    const btnMas             = document.getElementById('btn-mas');
+    const firmantesContainer = document.getElementById('firmantes-container');
+    const btnEnviar          = document.getElementById('btn-enviar');
+    const modalOverlay       = document.getElementById('modal-overlay');
+    const btnModalCerrar     = document.getElementById('btn-modal-cerrar');
+    const modalBody          = document.getElementById('modal-body');
+
+    /* ── Generar formularios de firmantes ── */
+    function renderFirmantes() {
+      firmantesContainer.innerHTML = '';
+
+      for (let i = 0; i < state.cantidadFirmantes; i++) {
+        const num = i + 1;
+        const div = document.createElement('div');
+        div.className = 'signer-card';
+        div.dataset.index = i;
+        div.innerHTML = `
+          <div class="signer-header">
+            <span class="signer-badge">Firmante ${num}</span>
+            <span class="signer-name-preview" id="preview-nombre-${i}"></span>
+          </div>
+          <div class="signer-grid">
+            <div class="form-group span-full">
+              <label for="nombre-${i}">Nombre y Apellido <span class="required-star">*</span></label>
+              <input type="text" id="nombre-${i}" placeholder="Ej: Juan Pérez" autocomplete="name" />
+              <span class="field-error" id="error-nombre-${i}">Ingresá el nombre y apellido.</span>
+            </div>
+            <div class="form-group">
+              <label for="dni-${i}">DNI <span class="required-star">*</span></label>
+              <input type="text" id="dni-${i}" placeholder="Ej: 28456789" maxlength="8" inputmode="numeric" />
+              <span class="field-error" id="error-dni-${i}">Ingresá un DNI válido (7-8 dígitos).</span>
+            </div>
+            <div class="form-group">
+              <label for="email-${i}">Email <span class="required-star">*</span></label>
+              <input type="email" id="email-${i}" placeholder="juan@email.com" autocomplete="email" />
+              <span class="field-error" id="error-email-${i}">Ingresá un email válido.</span>
+            </div>
+          </div>
+        `;
+        firmantesContainer.appendChild(div);
+
+        /* Actualizar preview de nombre en tiempo real */
+        const nombreInput = div.querySelector(`#nombre-${i}`);
+        const preview = div.querySelector(`#preview-nombre-${i}`);
+        nombreInput.addEventListener('input', () => {
+          preview.textContent = nombreInput.value.trim();
+        });
+
+        /* Sólo números en DNI */
+        const dniInput = div.querySelector(`#dni-${i}`);
+        dniInput.addEventListener('input', () => {
+          dniInput.value = dniInput.value.replace(/\D/g, '');
+        });
+      }
+
+      actualizarSteps();
+    }
+
+    /* ── Actualizar indicador de pasos ── */
+    function actualizarSteps() {
+      const doc = document.getElementById('documento').files.length > 0;
+      document.getElementById('step-1').className = 'step' + (doc ? ' done' : ' active');
+      document.getElementById('step-2').className = 'step active';
+      document.getElementById('step-3').className = 'step';
+    }
+
+    /* ── Controles +/- ── */
+    btnMenos.addEventListener('click', () => {
+      if (state.cantidadFirmantes > 1) {
+        state.cantidadFirmantes--;
+        cantidadInput.value = state.cantidadFirmantes;
+        renderFirmantes();
+      }
+    });
+
+    btnMas.addEventListener('click', () => {
+      if (state.cantidadFirmantes < 10) {
+        state.cantidadFirmantes++;
+        cantidadInput.value = state.cantidadFirmantes;
+        renderFirmantes();
+      }
+    });
+
+    /* Cambio directo en input (teclado) */
+    cantidadInput.addEventListener('change', () => {
+      let val = parseInt(cantidadInput.value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > 10) val = 10;
+      state.cantidadFirmantes = val;
+      cantidadInput.value = val;
+      renderFirmantes();
+    });
+
+    /* ── Validación ── */
+    function setFieldError(id, errorId, show) {
+      const input = document.getElementById(id);
+      const error = document.getElementById(errorId);
+      if (!input || !error) return;
+      if (show) {
+        input.classList.add('error');
+        error.classList.add('visible');
+      } else {
+        input.classList.remove('error');
+        error.classList.remove('visible');
+      }
+    }
+
+    function validarFormulario() {
+      let valido = true;
+
+      /* Documento */
+      const docInput = document.getElementById('documento');
+      const sinDoc = docInput.files.length === 0;
+      setFieldError('documento', 'error-documento', sinDoc);
+      if (sinDoc) valido = false;
+
+      /* Firmantes */
+      for (let i = 0; i < state.cantidadFirmantes; i++) {
+        const nombre = document.getElementById(`nombre-${i}`);
+        const dni    = document.getElementById(`dni-${i}`);
+        const email  = document.getElementById(`email-${i}`);
+
+        const nombreInvalido = !nombre.value.trim() || nombre.value.trim().split(/\s+/).length < 2;
+        const dniInvalido    = !/^\d{7,8}$/.test(dni.value.trim());
+        const emailInvalido  = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+
+        setFieldError(`nombre-${i}`, `error-nombre-${i}`, nombreInvalido);
+        setFieldError(`dni-${i}`,    `error-dni-${i}`,    dniInvalido);
+        setFieldError(`email-${i}`,  `error-email-${i}`,  emailInvalido);
+
+        if (nombreInvalido || dniInvalido || emailInvalido) valido = false;
+      }
+
+      return valido;
+    }
+
+    /* Limpiar error al escribir */
+    document.getElementById('documento').addEventListener('change', () => {
+      setFieldError('documento', 'error-documento', false);
+      actualizarSteps();
+    });
+
+    /* ── Envío ── */
+    btnEnviar.addEventListener('click', async () => {
+      if (!validarFormulario()) {
+        /* Scroll al primer error */
+        const firstError = document.querySelector('.error, input.error');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      /* Construir payload */
+      const docFile = document.getElementById('documento').files[0];
+      const firmantes = [];
+
+      for (let i = 0; i < state.cantidadFirmantes; i++) {
+        firmantes.push({
+          nombre: document.getElementById(`nombre-${i}`).value.trim(),
+          dni:    document.getElementById(`dni-${i}`).value.trim(),
+          email:  document.getElementById(`email-${i}`).value.trim(),
+        });
+      }
+
+      /* FormData para enviar el archivo + datos */
+      const formData = new FormData();
+      formData.append('documento', docFile);
+      formData.append('firmantes', JSON.stringify(firmantes));
+
+      /* UI: loading */
+      btnEnviar.disabled = true;
+      btnEnviar.innerHTML = `<span class="spinner"></span> Enviando...`;
+
+      try {
+        /*
+         * ─────────────────────────────────────────────────────────────
+         *  TODO: reemplazá la URL con el endpoint real de tu API de firma
+         * ─────────────────────────────────────────────────────────────
+         */
+        const API_URL = 'https://tu-api-de-firma.com/api/enviar';
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: formData,
+          /* Agregá headers de autenticación si tu API lo requiere, por ej:
+             headers: { 'Authorization': 'Bearer TU_TOKEN' }
+          */
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        /* Mostrar modal de éxito */
+        const primerFirmante = firmantes[0].nombre;
+        modalBody.innerHTML = `
+          El documento <strong>"${sanitize(docFile.name)}"</strong> fue enviado correctamente.<br/>
+          Los <strong>${firmantes.length}</strong> firmante${firmantes.length > 1 ? 's' : ''}
+          recibirán una notificación por <strong>email</strong> con las instrucciones para completar la firma.
+        `;
+        abrirModal();
+
+      } catch (err) {
+        /* En caso de error de red o HTTP */
+        alert(`Error al enviar el documento: ${err.message}\n\nVerificá la conexión y volvé a intentarlo.`);
+      } finally {
+        /* Restaurar botón */
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z" fill="currentColor"/>
+          </svg>
+          Enviar para firmar`;
+      }
+    });
+
+    /* ── Modal ── */
+    function abrirModal() {
+      modalOverlay.classList.add('open');
+      btnModalCerrar.focus();
+    }
+
+    function cerrarModal() {
+      modalOverlay.classList.remove('open');
+    }
+
+    btnModalCerrar.addEventListener('click', cerrarModal);
+
+    /* Cerrar con Escape o click fuera del modal */
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) cerrarModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalOverlay.classList.contains('open')) cerrarModal();
+    });
+
+    /* ── Sanitización básica para XSS (sólo para mostrar en HTML) ── */
+    function sanitize(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    /* ── Init ── */
+    renderFirmantes();
+  </script>
+</body>
+</html>
