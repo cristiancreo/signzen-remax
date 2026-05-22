@@ -80,19 +80,10 @@
       text-decoration: none;
     }
 
-    .logo-balloon {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
+    .logo-img {
+      height: 44px;
+      width: auto;
     }
-
-    .logo-text {
-      font-size: 1.5rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--color-grey-nero);
-    }
-    .logo-text span { color: var(--color-primary); }
 
     .header-subtitle {
       font-size: 0.75rem;
@@ -577,17 +568,7 @@
   <header>
     <div class="header-inner">
       <a href="#" class="logo-wrap">
-        <!-- RE/MAX balloon SVG (tricolor: azul, blanco, rojo) -->
-        <svg class="logo-balloon" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <ellipse cx="18" cy="16" rx="14" ry="14" fill="#003da5"/>
-          <ellipse cx="18" cy="16" rx="9"  ry="14" fill="#ffffff"/>
-          <ellipse cx="18" cy="16" rx="4"  ry="14" fill="#dc1c2f"/>
-          <!-- cuerda del globo -->
-          <path d="M18 30 Q19 32 18 35" stroke="#595959" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="logo-text">RE<span>/</span>MAX</div>
-        </div>
+        <img src="logo-remax-argentina-new.svg" alt="REMAX Argentina" class="logo-img" />
       </a>
       <span class="header-subtitle">Gestión de Documentos</span>
     </div>
