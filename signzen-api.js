@@ -15,17 +15,23 @@ const SIGNZEN_URL  = 'https://signzen-process-api.signzen-demo.com.ar/api/Proces
 const SIGNZEN_USER = 'ccreo@grupolpa.com';
 const SIGNZEN_PASS = '12345678';
 
-const GROUP_ID             = 'd7230a45-84f9-4572-972c-678947f70852';
-const DOCUMENT_TEMPLATE_ID = '5bf06170-954f-42ca-a18a-eecdbe87ec26';
-const EXTERNAL_CODE        = '0/111111';
-const SENDER               = 'REMAX Argentina';
-const EXPIRES_AT           = '2027-10-03T16:22:00-03:00';
-
-/** templateKey según cantidad de firmantes */
-const TEMPLATE_KEYS = {
-  1: 'remax1p',
-  2: 'remax2p',
-  3: 'remax3p',
+/** Configuración por cantidad de firmantes */
+const TEMPLATES = {
+  1: {
+    templateKey:        'remax1p',
+    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
+    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26',
+  },
+  2: {
+    templateKey:        'remax2p',
+    groupId:            'd7230a45-84f9-4572-972c-678947f70852', // TODO: reemplazar con el ID real de 2P
+    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26', // TODO: reemplazar con el ID real de 2P
+  },
+  3: {
+    templateKey:        'remax3p',
+    groupId:            'd7230a45-84f9-4572-972c-678947f70852', // TODO: reemplazar con el ID real de 3P
+    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26', // TODO: reemplazar con el ID real de 3P
+  },
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
@@ -67,13 +73,14 @@ function archivoABase64(file) {
  * @returns {Object} Body listo para JSON.stringify().
  */
 function construirBody(firmantes, base64Doc) {
-  const n = firmantes.length;
-  const templateKey = TEMPLATE_KEYS[n];
+  const n        = firmantes.length;
+  const template = TEMPLATES[n];
 
-  if (!templateKey) {
+  if (!template) {
     throw new Error(`Cantidad de firmantes no soportada: ${n}. Máximo permitido: 3.`);
   }
 
+  const { templateKey, groupId, documentTemplateId } = template;
   const fecha = fechaActual();
 
   /* Array de participantes — uno por firmante */
@@ -107,7 +114,7 @@ function construirBody(firmantes, base64Doc) {
   }));
 
   return {
-    groupId:      GROUP_ID,
+    groupId,
     templateKey,
     title:        'Firma de Documento REMAX',
     description:  'Firma de Documento REMAX',
@@ -118,9 +125,9 @@ function construirBody(firmantes, base64Doc) {
     forms,
     documents: [
       {
-        documentTemplateId: DOCUMENT_TEMPLATE_ID,
-        type:               'Base64',
-        base64:             base64Doc,
+        documentTemplateId,
+        type:   'Base64',
+        base64: base64Doc,
       },
     ],
     metadata: [
