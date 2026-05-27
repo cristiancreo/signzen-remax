@@ -123,6 +123,10 @@ function construirBody(firmantes, base64Doc) {
         base64:             base64Doc,
       },
     ],
+    metadata: [
+      { key: 'anexo',             value: '1'     },
+      { key: 'automaticApproval', value: 'false' },
+    ],
   };
 }
 
