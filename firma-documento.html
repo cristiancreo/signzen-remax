@@ -718,6 +718,9 @@
     <a href="https://www.remax.com.ar/">www.remax.com.ar</a>
   </footer>
 
+  <!-- ─── SignZen API ─── -->
+  <script src="signzen-api.js"></script>
+
   <!-- ─── JAVASCRIPT ─── -->
   <script>
     'use strict';
@@ -755,10 +758,15 @@
             <span class="signer-name-preview" id="preview-nombre-${i}"></span>
           </div>
           <div class="signer-grid">
-            <div class="form-group span-full">
-              <label for="nombre-${i}">Nombre y Apellido <span class="required-star">*</span></label>
-              <input type="text" id="nombre-${i}" placeholder="Ej: Juan Pérez" autocomplete="name" />
-              <span class="field-error" id="error-nombre-${i}">Ingresá el nombre y apellido.</span>
+            <div class="form-group">
+              <label for="nombre-${i}">Nombre <span class="required-star">*</span></label>
+              <input type="text" id="nombre-${i}" placeholder="Ej: Juan" autocomplete="given-name" />
+              <span class="field-error" id="error-nombre-${i}">Ingresá el nombre.</span>
+            </div>
+            <div class="form-group">
+              <label for="apellido-${i}">Apellido <span class="required-star">*</span></label>
+              <input type="text" id="apellido-${i}" placeholder="Ej: Pérez" autocomplete="family-name" />
+              <span class="field-error" id="error-apellido-${i}">Ingresá el apellido.</span>
             </div>
             <div class="form-group">
               <label for="dni-${i}">DNI <span class="required-star">*</span></label>
@@ -774,12 +782,17 @@
         `;
         firmantesContainer.appendChild(div);
 
-        /* Actualizar preview de nombre en tiempo real */
-        const nombreInput = div.querySelector(`#nombre-${i}`);
-        const preview = div.querySelector(`#preview-nombre-${i}`);
-        nombreInput.addEventListener('input', () => {
-          preview.textContent = nombreInput.value.trim();
-        });
+        /* Actualizar preview con Nombre + Apellido en tiempo real */
+        const nombreInput   = div.querySelector(`#nombre-${i}`);
+        const apellidoInput = div.querySelector(`#apellido-${i}`);
+        const preview       = div.querySelector(`#preview-nombre-${i}`);
+        const actualizarPreview = () => {
+          const n = nombreInput.value.trim();
+          const a = apellidoInput.value.trim();
+          preview.textContent = (n || a) ? `${n} ${a}`.trim() : '';
+        };
+        nombreInput.addEventListener('input', actualizarPreview);
+        apellidoInput.addEventListener('input', actualizarPreview);
 
         /* Sólo números en DNI */
         const dniInput = div.querySelector(`#dni-${i}`);
@@ -809,7 +822,7 @@
     });
 
     btnMas.addEventListener('click', () => {
-      if (state.cantidadFirmantes < 10) {
+      if (state.cantidadFirmantes < 3) {
         state.cantidadFirmantes++;
         cantidadInput.value = state.cantidadFirmantes;
         renderFirmantes();
@@ -820,7 +833,7 @@
     cantidadInput.addEventListener('change', () => {
       let val = parseInt(cantidadInput.value, 10);
       if (isNaN(val) || val < 1) val = 1;
-      if (val > 10) val = 10;
+      if (val > 3) val = 3;
       state.cantidadFirmantes = val;
       cantidadInput.value = val;
       renderFirmantes();
@@ -851,19 +864,22 @@
 
       /* Firmantes */
       for (let i = 0; i < state.cantidadFirmantes; i++) {
-        const nombre = document.getElementById(`nombre-${i}`);
-        const dni    = document.getElementById(`dni-${i}`);
-        const email  = document.getElementById(`email-${i}`);
+        const nombre   = document.getElementById(`nombre-${i}`);
+        const apellido = document.getElementById(`apellido-${i}`);
+        const dni      = document.getElementById(`dni-${i}`);
+        const email    = document.getElementById(`email-${i}`);
 
-        const nombreInvalido = !nombre.value.trim() || nombre.value.trim().split(/\s+/).length < 2;
-        const dniInvalido    = !/^\d{7,8}$/.test(dni.value.trim());
-        const emailInvalido  = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+        const nombreInvalido   = !nombre.value.trim();
+        const apellidoInvalido = !apellido.value.trim();
+        const dniInvalido      = !/^\d{7,8}$/.test(dni.value.trim());
+        const emailInvalido    = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
 
-        setFieldError(`nombre-${i}`, `error-nombre-${i}`, nombreInvalido);
-        setFieldError(`dni-${i}`,    `error-dni-${i}`,    dniInvalido);
-        setFieldError(`email-${i}`,  `error-email-${i}`,  emailInvalido);
+        setFieldError(`nombre-${i}`,   `error-nombre-${i}`,   nombreInvalido);
+        setFieldError(`apellido-${i}`, `error-apellido-${i}`, apellidoInvalido);
+        setFieldError(`dni-${i}`,      `error-dni-${i}`,      dniInvalido);
+        setFieldError(`email-${i}`,    `error-email-${i}`,    emailInvalido);
 
-        if (nombreInvalido || dniInvalido || emailInvalido) valido = false;
+        if (nombreInvalido || apellidoInvalido || dniInvalido || emailInvalido) valido = false;
       }
 
       return valido;
@@ -917,49 +933,28 @@
         return;
       }
 
-      /* Construir payload */
-      const docFile = document.getElementById('documento').files[0];
+      /* Recolectar datos de firmantes */
+      const docFile  = document.getElementById('documento').files[0];
       const firmantes = [];
 
       for (let i = 0; i < state.cantidadFirmantes; i++) {
         firmantes.push({
-          nombre: document.getElementById(`nombre-${i}`).value.trim(),
-          dni:    document.getElementById(`dni-${i}`).value.trim(),
-          email:  document.getElementById(`email-${i}`).value.trim(),
+          nombre:   document.getElementById(`nombre-${i}`).value.trim(),
+          apellido: document.getElementById(`apellido-${i}`).value.trim(),
+          dni:      document.getElementById(`dni-${i}`).value.trim(),
+          email:    document.getElementById(`email-${i}`).value.trim(),
         });
       }
-
-      /* FormData para enviar el archivo + datos */
-      const formData = new FormData();
-      formData.append('documento', docFile);
-      formData.append('firmantes', JSON.stringify(firmantes));
 
       /* UI: loading */
       btnEnviar.disabled = true;
       btnEnviar.innerHTML = `<span class="spinner"></span> Enviando...`;
 
       try {
-        /*
-         * ─────────────────────────────────────────────────────────────
-         *  TODO: reemplazá la URL con el endpoint real de tu API de firma
-         * ─────────────────────────────────────────────────────────────
-         */
-        const API_URL = 'https://tu-api-de-firma.com/api/enviar';
-
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          body: formData,
-          /* Agregá headers de autenticación si tu API lo requiere, por ej:
-             headers: { 'Authorization': 'Bearer TU_TOKEN' }
-          */
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+        /* Llamada a la API de SignZen (definida en signzen-api.js) */
+        await enviarSignZen(firmantes, docFile);
 
         /* Mostrar modal de éxito */
-        const primerFirmante = firmantes[0].nombre;
         modalBody.innerHTML = `
           El documento <strong>"${sanitize(docFile.name)}"</strong> fue enviado correctamente.<br/>
           Los <strong>${firmantes.length}</strong> firmante${firmantes.length > 1 ? 's' : ''}
@@ -968,10 +963,8 @@
         abrirModal();
 
       } catch (err) {
-        /* En caso de error de red o HTTP */
         alert(`Error al enviar el documento: ${err.message}\n\nVerificá la conexión y volvé a intentarlo.`);
       } finally {
-        /* Restaurar botón */
         btnEnviar.disabled = false;
         btnEnviar.innerHTML = `
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
