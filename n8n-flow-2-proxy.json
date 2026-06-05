@@ -1,0 +1,126 @@
+{
+  "name": "REMAX — 2. SignZen Proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "remax/enviar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "POST /remax/enviar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normaliza el body según la versión de n8n.\n// En algunas versiones el webhook expone el body en $json.body;\n// en otras, $json ES el body directamente.\nconst incoming = $input.first().json;\nconst body = (incoming.body && typeof incoming.body === 'object')\n  ? incoming.body\n  : incoming;\nreturn [{ json: body }];"
+      },
+      "id": "ffffffff-0000-0000-0000-000000000001",
+      "name": "Normalizar body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://signzen-process-api.signzen-demo.com.ar/api/Processes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic Y2NyZW9AZ3J1cG9scGEuY29tOjEyMzQ1Njc4"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json-patch+json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "Llamar SignZen API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [690, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first();\n\nif (item.error) {\n  const errMsg = item.error.message ?? JSON.stringify(item.json);\n  const match = errMsg.match(/^(\\d{3})\\s+-/);\n  const statusCode = match ? parseInt(match[1]) : 502;\n  return [{ json: { statusCode, responseBody: JSON.stringify({ error: errMsg }) } }];\n}\n\n// Éxito: item.json es la respuesta de SignZen directamente\nreturn [{ json: { statusCode: 200, responseBody: JSON.stringify(item.json) } }];"
+      },
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "name": "Preparar respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.responseBody }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "name": "Responder al Frontend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 300]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST /remax/enviar": {
+      "main": [
+        [{ "node": "Normalizar body", "type": "main", "index": 0 }]
+      ]
+    },
+    "Normalizar body": {
+      "main": [
+        [{ "node": "Llamar SignZen API", "type": "main", "index": 0 }]
+      ]
+    },
+    "Llamar SignZen API": {
+      "main": [
+        [{ "node": "Preparar respuesta", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar respuesta": {
+      "main": [
+        [{ "node": "Responder al Frontend", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "remax-proxy-flow",
+  "tags": []
+}

@@ -652,7 +652,7 @@
           <button class="file-btn" type="button" id="file-btn" tabindex="-1" aria-hidden="true">Seleccionar archivo</button>
           <span class="file-name" id="file-name">Ningún archivo seleccionado</span>
         </div>
-        <p class="file-hint">Formatos aceptados: PDF, DOC, DOCX. Tamaño máximo: 20 MB.</p>
+        <p class="file-hint">Formatos aceptados: PDF. Tamaño máximo: 20 MB.</p>
         <span class="field-error" id="error-documento">Por favor seleccioná un documento.</span>
       </div>
 
@@ -980,8 +980,22 @@
       btnModalCerrar.focus();
     }
 
+    function limpiarFormulario() {
+      /* Resetear cantidad de firmantes */
+      state.cantidadFirmantes = 1;
+      cantidadInput.value = 1;
+      renderFirmantes();
+
+      /* Resetear archivo */
+      fileInput.value = '';
+      fileNameEl.textContent = 'Ningún archivo seleccionado';
+      fileNameEl.classList.remove('selected');
+      fileWrap.classList.remove('error');
+    }
+
     function cerrarModal() {
       modalOverlay.classList.remove('open');
+      limpiarFormulario();
     }
 
     btnModalCerrar.addEventListener('click', cerrarModal);

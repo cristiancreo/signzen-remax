@@ -4,16 +4,19 @@
  *
  * Soporta 1, 2 o 3 firmantes usando las plantillas remax1p / remax2p / remax3p.
  *
- * NOTA DE SEGURIDAD: Las credenciales están aquí para entorno de demo.
- * En producción deben moverse a un backend o variable de entorno.
+ * Este archivo corre en el BROWSER. No contiene credenciales.
+ * Las llamadas a SignZen se delegan al proxy n8n (flow 2),
+ * que agrega las credenciales de forma segura en el servidor.
  */
 
 'use strict';
 
 /* ── Configuración ─────────────────────────────────────────────────── */
-const SIGNZEN_URL  = 'https://signzen-process-api.signzen-demo.com.ar/api/Processes';
-const SIGNZEN_USER = 'ccreo@grupolpa.com';
-const SIGNZEN_PASS = '12345678';
+
+/** URL del webhook proxy en n8n (Flow 2). Ajustar con el dominio real. */
+const N8N_PROXY_URL = 'https://square-regular-honeybee.ngrok-free.app/webhook/remax/enviar';
+
+const EXTERNAL_CODE = '1976';
 
 /** Configuración por cantidad de firmantes */
 const TEMPLATES = {
@@ -25,12 +28,12 @@ const TEMPLATES = {
   2: {
     templateKey:        'remax2p',
     groupId:            'd7230a45-84f9-4572-972c-678947f70852', // TODO: reemplazar con el ID real de 2P
-    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26', // TODO: reemplazar con el ID real de 2P
+    documentTemplateId: 'b6838d21-9b1a-415c-84c6-20feb274e423', // TODO: reemplazar con el ID real de 2P
   },
   3: {
     templateKey:        'remax3p',
     groupId:            'd7230a45-84f9-4572-972c-678947f70852', // TODO: reemplazar con el ID real de 3P
-    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26', // TODO: reemplazar con el ID real de 3P
+    documentTemplateId: '25ea6311-c64c-4642-a891-7f5303316844', // TODO: reemplazar con el ID real de 3P
   },
 };
 
@@ -39,8 +42,8 @@ const TEMPLATES = {
 /**
  * Devuelve la fecha y hora actual formateada como "DD/MM/YYYY HH:MM:SS hs".
  */
-function fechaActual() {
-  const now = new Date();
+function fechaActual(minutosExtra = 0) {
+  const now = new Date(Date.now() + minutosExtra * 60000);
   const pad = (n) => String(n).padStart(2, '0');
   return (
     `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ` +
@@ -81,7 +84,6 @@ function construirBody(firmantes, base64Doc) {
   }
 
   const { templateKey, groupId, documentTemplateId } = template;
-  const fecha = fechaActual();
 
   /* Array de participantes — uno por firmante */
   const participants = firmantes.map((f, i) => ({
@@ -101,17 +103,20 @@ function construirBody(firmantes, base64Doc) {
   }));
 
   /* Array de formularios — uno por firmante */
-  const forms = firmantes.map((f, i) => ({
-    stepKey: `participante${i + 1}`,
-    formKey: 'formulario evidencias',
-    fields: [
-      { key: `firmante${i + 1}`, value: `Identificador Firmante ${i + 1}` },
-      { key: `NomyApe${i + 1}`,  value: `Nombre y Apellido: ${f.nombre} ${f.apellido}` },
-      { key: `email${i + 1}`,    value: `Email: ${f.email}` },
-      { key: `fecha${i + 1}`,    value: `Fecha de Firma: ${fecha}` },
-    ],
-    markAsCompleted: true,
-  }));
+  const forms = firmantes.map((f, i) => {
+    const fecha = fechaActual(i + 1); // +1 min por participante
+    return {
+      stepKey: `participante${i + 1}`,
+      formKey: 'formulario evidencias',
+      fields: [
+        { key: `firmante${i + 1}`, value: `Identificador Firmante ${i + 1}` },
+        { key: `NomyApe${i + 1}`,  value: `Nombre y Apellido: ${f.nombre} ${f.apellido}` },
+        { key: `email${i + 1}`,    value: `Email: ${f.email}` },
+        { key: `fecha${i + 1}`,    value: `Fecha de Firma: ${fecha}` },
+      ],
+      markAsCompleted: true,
+    };
+  });
 
   return {
     groupId,
@@ -119,8 +124,8 @@ function construirBody(firmantes, base64Doc) {
     title:        'Firma de Documento REMAX',
     description:  'Firma de Documento REMAX',
     externalCode: EXTERNAL_CODE,
-    sender:       SENDER,
-    expiresAt:    EXPIRES_AT,
+    sender:       '',
+    expiresAt:    '',
     participants,
     forms,
     documents: [
@@ -151,13 +156,11 @@ async function enviarSignZen(firmantes, docFile) {
   const base64Doc = await archivoABase64(docFile);
   const body = construirBody(firmantes, base64Doc);
 
-  const credenciales = btoa(`${SIGNZEN_USER}:${SIGNZEN_PASS}`);
-
-  const response = await fetch(SIGNZEN_URL, {
+  // Las credenciales las agrega el proxy n8n — este fetch no lleva Authorization.
+  const response = await fetch(N8N_PROXY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Basic ${credenciales}`,
     },
     body: JSON.stringify(body),
   });

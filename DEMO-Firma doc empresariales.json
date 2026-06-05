@@ -1,0 +1,752 @@
+{
+  "name": "Firma doc empresariales",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "firmas_documentos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1584,
+        432
+      ],
+      "id": "56524750-f89b-4ef0-886d-9185537c7d42",
+      "name": "Webhook",
+      "webhookId": "ddbe6572-6977-4add-94c7-bfc1d054dbe6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Call \\'Config variables\\'').item.json.url }}/documents/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "simple",
+              "value": "true"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "*/*"
+            },
+            {
+              "name": "x-library",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.libreria }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Webhook').item.json.body.Authorization }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"Columns\": [\n    \"id\",\n    \"object_title\",\n    \"Legajo\",\n    \"cuil\",\n    \"categoria\",\n    \"mail\",\n    \"numero_celular\",\n    \"nombre_y_apellido\"\n  ],\n  \"Order\": [\n    \"created_at desc\"\n  ],\n  \"Filter\": {\n    \"combinator\": \"and\",\n    \"rules\": [\n      {\n        \"field\": \"mail\",\n        \"operator\": \"=\",\n        \"value\": \"{{ $('Webhook').item.json.body.email }}\"\n      },\n      {\n        \"field\": \"object_definition_name\",\n        \"operator\": \"=\",\n        \"value\": \"legajos\"\n      }\n    ]\n  },\n  \"Paging\": {\n    \"PageNumber\": 0,\n    \"PageSize\": 10\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -704,
+        416
+      ],
+      "id": "275003a1-bab2-4027-8850-0aee25b50437",
+      "name": "Obtener legajo",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "46ffcc75-f109-405a-bd0a-53b1a6b95ea0",
+              "leftValue": "={{ $('Webhook').item.json.body.sender }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1008,
+        432
+      ],
+      "id": "5ffcf63b-cf35-4d7a-80ea-219edbf933c2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Este nodo espera que el archivo venga en la propiedad binary.data\n// Output: \n//  - base64: el archivo en base64\n//  - pdf: el archivo binario (para usarlo como PDF)\n\nconst itemsOut = [];\n\nfor (const item of items) {\n  if (!item.binary || !item.binary.data) {\n    throw new Error(\"No se encontró el archivo en binary.data\");\n  }\n\n  // Obtenemos el archivo binario\n  const file = item.binary.data;\n\n  // Convertimos el archivo a base64\n  const base64Data = file.data.toString('base64');\n\n  itemsOut.push({\n    json: {\n      base64: base64Data,  // aquí queda el base64\n    },\n    binary: {\n      pdf: {\n        data: file.data,   // binario tal cual\n        mimeType: 'application/pdf',\n        fileName: file.fileName || 'document.pdf',\n      }\n    }\n  });\n}\n\nreturn itemsOut;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        416
+      ],
+      "id": "77ea4de7-1692-4f9c-8f96-5ad2470512c0",
+      "name": "Convertir a base64 + pdf"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Call \\'Config variables\\'').item.json.acroform }}/procesar-pdf-archivo",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "nombre_archivo",
+              "value": "documento_procesado.pdf"
+            },
+            {
+              "name": "incluir_hash",
+              "value": "true"
+            },
+            {
+              "name": "x",
+              "value": "617"
+            },
+            {
+              "name": "y",
+              "value": "35"
+            },
+            {
+              "name": "ancho",
+              "value": "160"
+            },
+            {
+              "name": "alto",
+              "value": "35"
+            },
+            {
+              "name": "usar_coordenadas_automaticas",
+              "value": "true"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "pdf"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        416
+      ],
+      "id": "c77c09ea-bc0a-4f52-8ade-ed84642b5ef1",
+      "name": "Agregar acroform",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Call \\'Config variables\\'').first().json.url }}/documents/{{ $('Webhook').first().json.body.docId }}/download",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-library",
+              "value": "={{ $('Call \\'Config variables\\'').first().json.libreria }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Webhook').item.json.body.Authorization }}"
+            },
+            {
+              "name": "accept",
+              "value": "*/*"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        416
+      ],
+      "id": "f8fc9029-2201-4b98-a667-fa60dfb72607",
+      "name": "Descargar Fisico binario",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Call \\'Config variables\\'').item.json.signzen_url }}/api/Processes/{{ $json.body.process }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.authorization_sz }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -704,
+        592
+      ],
+      "id": "ce8a5049-93b7-4bcd-9a70-4c841ed4a5d9",
+      "name": "Obtener datos del proceso"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const metadata = item.json.metadata;\n\n  // Convertimos el array de metadatas a un objeto más fácil de manejar\n  const map = {};\n  for (const m of metadata) {\n    map[m.key] = m.value;\n  }\n\n  // Armamos el nuevo objeto en el orden fijo que vos querés\n  const orderedMetadata = [\n    { key: \"legajo\", value: map[\"legajo\"] || null },\n    { key: \"id documento original\", value: map[\"id documento original\"] || null },\n    { key: \"cuil\", value: map[\"cuil\"] || null },\n    { key: \"nombre_empleado\", value: map[\"nombre_empleado\"] || null },\n    { key: \"token\", value: map[\"token\"] || null }\n  ];\n\n  // Devolvemos el item con la metadata reordenada\n  return {\n    json: {\n      ...item.json,\n      metadata: orderedMetadata\n    }\n  };\n});\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        592
+      ],
+      "id": "b1b69019-c31f-4e3a-a0bf-d181998c97b1",
+      "name": "Ordenar metadata"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const workflow = item.json.workflow || [];\n\n  // Buscar el step cuyo title sea exactamente \"Empleado\"\n  const empleado = workflow.find(\n    step => step.title === \"Empleado\"\n  ) || null;\n\n  return {\n    json: {\n      title: empleado ? empleado.title : null,\n      description: empleado ? empleado.description : null,\n      dependencies: empleado?.dependencies || [],\n      type: empleado ? empleado.type : null,\n      status: empleado ? empleado.status : null,\n      startDate: empleado ? empleado.startDate : null,\n      endDate: empleado ? empleado.endDate : null,\n      id: empleado ? empleado.id : null,\n      createdAt: empleado ? empleado.createdAt : null,\n      updatedAt: empleado ? empleado.updatedAt : null\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        592
+      ],
+      "id": "f84b88b8-7e30-4ca8-8897-755560d66374",
+      "name": "Separar paso empleado"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Call \\'Config variables\\'').item.json.signzen_url }}/api/Tasks/{{ $('Separar paso empleado').item.json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.authorization_sz }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        592
+      ],
+      "id": "94219c34-650a-4485-b0d6-67cf80f1fccd",
+      "name": "Obtener Tareas del Empleado"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  // Tu JSON real\n  const step = item.json;\n  const participant = step.tasks[0];\n  const tasks = participant.tasks;\n\n  // Mapa por title (igual que tu metadata)\n  const map = {};\n  for (const t of tasks) {\n    map[t.title] = t;\n  }\n\n  // Orden FIJO\n  const orderedTasks = [\n    map[\"Notificacion\"] || null,\n    map[\"Leer recibo\"] || null,\n    map[\"Firmar Documento\"] || null\n  ].filter(Boolean);\n\n  // Reemplazamos solo el array tasks\n  participant.tasks = orderedTasks;\n\n  return { json: step };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        592
+      ],
+      "id": "4d100678-2c6f-415d-a1ca-5c5c87602870",
+      "name": "Ordernar tareas"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Call \\'Config variables\\'').item.json.url }}/documents/{{ $('Ordenar metadata').item.json.metadata[1].value }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "*/*"
+            },
+            {
+              "name": "x-library",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.libreria }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Ordenar metadata').item.json.metadata[4].value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        592
+      ],
+      "id": "9b9871bf-28ae-432e-bfd8-99661dc5d7d2",
+      "name": "Obtener datos del archivo original",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        688,
+        592
+      ],
+      "id": "26f3e16e-e576-444e-b597-b4fdfea765fc",
+      "name": "base64 doc firmado"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Call \\'Config variables\\'').item.json.signzen_url }}/api/Documents/{{ $('Obtener datos del proceso').item.json.documents[0].id }}/signed/download ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "*/*"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        592
+      ],
+      "id": "d4e1f00a-c6a9-4dae-9933-13566f786815",
+      "name": "Obtener archivo firmado SZ"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Call \\'Config variables\\'').item.json.url }}/documents/base64?disableSubscription=true",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "*/*"
+            },
+            {
+              "name": "x-library",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.libreria }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Ordenar metadata').item.json.metadata[4].value }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"json\": {\n    \"properties\": [\n      { \"name\": \"object_title\", \"value\": \"{{ $('Obtener datos del archivo original').item.json.properties[0].value }} firmado por {{ $('Ordenar metadata').item.json.metadata[3].value }}\" },\n      { \"name\": \"legajo\", \"value\": \"{{ $('Ordenar metadata').item.json.metadata[0].value }}\" },\n      { \"name\": \"nombre_y_apellido\", \"value\": \"{{ $('Ordenar metadata').item.json.metadata[3].value }}\" },\n      { \"name\": \"descripcion\", \"value\": \"{{ $('Obtener datos del archivo original').item.json.properties[5].value }}\"},\n      { \"name\": \"tipo_de_documento\", \"value\": \"{{ $('Obtener datos del archivo original').item.json.properties[3].value }}\"},\n      { \"name\": \"cuil\", \"value\": \"{{ $('Ordenar metadata').item.json.metadata[2].value }}\" }\n\n    ],\n    \"security\": [],\n    \"objectDefinitionId\": \"5a9410a7-dcef-4535-993d-1b7ca0bb5c78\"\n  },\n  \"content\": \"{{ $('base64 doc firmado').item.json.data }}\",\n  \"fileName\": \"Documento_firmado.pdf\",\n  \"contentType\": \"application/pdf\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "id"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        592
+      ],
+      "id": "90aa46b2-bf22-4d15-97d0-e3cf53e14d52",
+      "name": "Subir a Aditus firmado",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Call \\'Config variables\\'').item.json.signzen_url }}/api/Processes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $('Call \\'Config variables\\'').item.json.authorization_sz }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json-patch+json",
+        "body": "={\n  \"groupId\": \"{{ $('Call \\'Config variables\\'').item.json.group_id }}\",\n  \"templateId\": \"{{ $('Call \\'Config variables\\'').item.json.id_plantilla }}\",\n  \"title\": \"Firma Documento Empresarial\",\n  \"description\": \"Envios a firmar vía SignZen\",\n  \"externalCode\": \"{{ $('Webhook').item.json.body.docId }}\",\n  \"sender\": \"LPA\",\n  \"participants\": [\n    {\n      \"stepId\": \"{{ $('Call \\'Config variables\\'').item.json.id_step }}\",\n      \"participants\": [\n        {\n          \"name\": \"{{ $('Obtener legajo').item.json.nombre_y_apellido }}\",\n          \"email\": \"{{ $('Webhook').item.json.body.email }}\",\n          \"phone\": \"{{ $('Obtener legajo').item.json.numero_celular }}\"\n        }\n      ]\n    }\n  ],\n  \"documents\": [\n    {\n      \"documentTemplateId\": \"{{ $('Call \\'Config variables\\'').item.json.id_document_template }}\",\n      \"type\": \"Base64\",\n      \"base64\": \"{{ $('Agregar acroform').item.json.documento_pdf }}\"\n    }\n  ],\n  \"metadata\": [\n    {\n      \"key\": \"nombre_empleado\",\n      \"value\": \"{{ $('Obtener legajo').item.json.nombre_y_apellido }}\"\n    },\n    {\n      \"key\": \"cuil\",\n      \"value\": \"{{ $('Obtener legajo').item.json.cuil }}\"\n    },\n    {\n      \"key\": \"legajo\",\n      \"value\": \"{{ $('Obtener legajo').item.json.Legajo }}\"\n    },\n    {\n      \"key\": \"id documento original\",\n      \"value\": \"{{ $('Webhook').item.json.body.docId }}\"\n    },\n    {\n      \"key\": \"token\",\n      \"value\": \"{{ $('Webhook').item.json.body.Authorization }}\"\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        416
+      ],
+      "id": "8e33d4d3-724d-4bf9-b7c6-16f569b6ffbb",
+      "name": "Envio a SignZen"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "819oXKfeZ1oVfrjr",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/819oXKfeZ1oVfrjr",
+          "cachedResultName": "Config variables"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        432
+      ],
+      "id": "8b9387b3-280f-4094-bbf3-18df6da988bc",
+      "name": "Call 'Config variables'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "47f75cc4-c3c1-49b8-a6fd-3b213d4a2e73",
+              "name": "aditus",
+              "value": "={{ $json.body.aditus }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1392,
+        432
+      ],
+      "id": "9d9ffd99-8b1b-48d7-b8e4-36c39db8e556",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "square-regular-honeybee.ngrok-free.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
+            "content-length": "2839",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-419,es;q=0.9,es-ES;q=0.8,en;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+            "content-type": "application/json",
+            "origin": "https://ecm-web-desktop.aditus-demo.com.ar",
+            "priority": "u=1, i",
+            "referer": "https://ecm-web-desktop.aditus-demo.com.ar/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Microsoft Edge\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "190.49.125.118",
+            "x-forwarded-host": "square-regular-honeybee.ngrok-free.app",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "sender": "Aditus",
+            "title": "Doc - 034e1019-3200-4aca-a424-5cd1807c7d25",
+            "x-library": "32a76e80-1d2d-47fe-9b9d-d423cf644d68",
+            "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJvOXZIRXFWMUJ0UHNDNXRHYW5wN2NPYkNMQ0wyOHllZGRZdTFRTG5HUS1nIn0.eyJleHAiOjE3Nzg2NDQwOTksImlhdCI6MTc3ODYxNTI5OSwiYXV0aF90aW1lIjoxNzc4NjE1Mjk4LCJqdGkiOiI4NGE0NGQ2Yy0wYzU3LTQwMmYtODc2OC01Y2VhNWI5Y2ZkM2UiLCJpc3MiOiJodHRwczovL2FkaXR1cy1hdXRoLmFkaXR1cy1kZW1vLmNvbS5hci9yZWFsbXMvYWRpdHVzIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImI5ZGZhMGM0LWIzYTktNGFlYS05NGQzLTI4ZTNkMzVlYzc2ZiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkaXR1cy1wbGF0Zm9ybS1jbGllbnQiLCJzaWQiOiI1YzQ0MzZkNi05ZjI2LTRkYjUtYjI0Mi1iNWI5ZjQzZjk0ZjciLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIjUwLjMxLjEwMS4yMzUiLCJodHRwczovL2VjbS13ZWItYWRtaW4uYWRpdHVzLWRlbW8uY29tLmFyIiwiMTM4LjEyMi4xOTAuNTMiLCJodHRwczovL2FkaXR1cy1kZXNrdG9wLmFkaXR1cy1kZW1vLmNvbS5hciIsImh0dHBzOi8vYWRpdHVzLWZvcm1zLmFkaXR1cy1kZW1vLmNvbS5hciIsImh0dHBzOi8vYWRpdHVzLXN0b3JhZ2UuYWRpdHVzLWRlbW8uY29tLmFyIiwiaHR0cHM6Ly9lY20tYXBpLmFkaXR1cy1kZW1vLmNvbS5hciIsImh0dHBzOi8vZWNtLXdlYi1kZXNrdG9wLmFkaXR1cy1kZW1vLmNvbS5hciJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1hZGl0dXMiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWRpdHVzLXBsYXRmb3JtLWNsaWVudCI6eyJyb2xlcyI6WyJhZGl0dXMtc3RvcmFnZS11c2VyIiwiYWRpdHVzLWRlc2t0b3AtYWRtaW4iLCJhZGl0dXMtc3RvcmFnZS1hZG1pbiIsImFkaXR1cy1kZXNrdG9wLXVzZXIiLCJhZGl0dXMtZWRtLWFkbWluIiwiYWRpdHVzLWVkbS11c2VyIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBlbWFpbCBncm91cHMgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiTHVjYXMgQ3JlbyIsImdyb3VwcyI6WyIvYWRpdHVzLWRlbW8tYW1mYXlzIiwiL2FkaXR1cy1zcGFjZXMtY29udHJhdG9zIiwiL2FkaXR1cy1zcGFjZXMtZGVtbyIsIi9hZGl0dXMtc3BhY2VzLWZhY3R1cmFzIiwiL2FkaXR1cy1zcGFjZXMtbWFuYWdlbWVudCIsIi9hZGl0dXMtc3BhY2VzLXJyaGgiLCIvYWRpdHVzLXNwYWNlcy1ycmhoLWFkbWlucyIsIi9hZGl0dXMtc3RvcmFnZS1hZG1pbnMiLCIvYWRpdHVzLXN0b3JhZ2UtdXNlcnMiLCIvZWRtLXVzZXJzL2JvcnJhZG8iLCIvZWRtLWFkbWluaXN0cmF0b3JzIiwiL2VkbS11c2VycyIsIi9lZG0tdXNlcnMvbGVjdHVyYSIsIi9lZG0tdXNlcnMvbW9kaWZpY2FjaW9uIl0sInByZWZlcnJlZF91c2VybmFtZSI6ImxjcmVvIiwiZ2l2ZW5fbmFtZSI6Ikx1Y2FzIiwibG9jYWxlIjoiZXMiLCJmYW1pbHlfbmFtZSI6IkNyZW8iLCJlbWFpbCI6ImxjcmVvQGdydXBvbHBhLmNvbSJ9.XNKD31TCkUZFL_v1YY4SL65uU5_VnPFH93_HxuP9e9otJ5K33_Ww67jJUmg7ZJ-ua6T8fLCtuurV0ok-Crx9GdtT7A6Sk1b1GP0usaLk0MP7gCNsd7LzOloOy11VkKSYAL374E5FCfnkQ_95r9hVVYJ_LoI3aFhOPiup2I_0Uuq62UxvJcKwFxjdnppBhEhwlKTTsdKIxcnY2VrsxvpXRtiFvKRUJFnL_iknZAKbJLdkKycP7k2H8lSrLD8CM-Vq1acuEDa7ES3gVxTTROAwxI1BCIDYrCE5Mdm98AtahDTQC9FDl3kQMx15DGOkNMKh-u00oj0l2zZx0P-ni9Twaw",
+            "email": "lcreo@grupolpa.com",
+            "docId": "034e1019-3200-4aca-a424-5cd1807c7d25",
+            "objectDefinitionId": "5a9410a7-dcef-4535-993d-1b7ca0bb5c78",
+            "objectTitle": "Política de Integridad y Conducta Empresarial",
+            "aditus": "demo"
+          },
+          "webhookUrl": "https://square-regular-honeybee.ngrok-free.app/webhook/firmas_documentos",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener legajo": {
+      "main": [
+        [
+          {
+            "node": "Descargar Fisico binario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Obtener legajo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener datos del proceso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convertir a base64 + pdf": {
+      "main": [
+        [
+          {
+            "node": "Agregar acroform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar acroform": {
+      "main": [
+        [
+          {
+            "node": "Envio a SignZen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Fisico binario": {
+      "main": [
+        [
+          {
+            "node": "Convertir a base64 + pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener datos del proceso": {
+      "main": [
+        [
+          {
+            "node": "Ordenar metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ordenar metadata": {
+      "main": [
+        [
+          {
+            "node": "Separar paso empleado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar paso empleado": {
+      "main": [
+        [
+          {
+            "node": "Obtener Tareas del Empleado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Tareas del Empleado": {
+      "main": [
+        [
+          {
+            "node": "Ordernar tareas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ordernar tareas": {
+      "main": [
+        [
+          {
+            "node": "Obtener datos del archivo original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener datos del archivo original": {
+      "main": [
+        [
+          {
+            "node": "Obtener archivo firmado SZ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "base64 doc firmado": {
+      "main": [
+        [
+          {
+            "node": "Subir a Aditus firmado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener archivo firmado SZ": {
+      "main": [
+        [
+          {
+            "node": "base64 doc firmado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Config variables'": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Call 'Config variables'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "09f98ad3-f816-4281-8b9b-0e41f1e59b90",
+  "meta": {
+    "instanceId": "632fbca773cdea0a21e07f6adc6c37100964ed45e6107115a1dbed86183941b0"
+  },
+  "id": "2lboLc4LNYImCCa9",
+  "tags": [
+    {
+      "updatedAt": "2026-04-13T19:41:13.549Z",
+      "createdAt": "2026-04-13T19:41:13.549Z",
+      "id": "r2JpNwDzJACrSPxH",
+      "name": "rrhh"
+    }
+  ]
+}
