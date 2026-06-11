@@ -86,10 +86,10 @@
       ]
     }
   },
-  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
+  "active": false,
   "versionId": "55555555-5555-5555-5555-555555555555",
   "meta": {
     "templateCredsSetupCompleted": true
