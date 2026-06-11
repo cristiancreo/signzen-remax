@@ -4,15 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enviar Documento a Firmar | REMAX</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <style>
     /* ── Design tokens (extraídos del sitio remax.com.ar) ── */
     :root {
-      --color-primary:         #003da5;
-      --color-primary-dark1:   #003399;
-      --color-primary-light1:  #1546b1;
+      --color-primary:         #0958d9;
+      --color-primary-dark1:   #0747ae;
+      --color-primary-light1:  #1668dc;
       --color-secondary:       #dc1c2f;
       --color-secondary-dark1: #cf1128;
       --color-grey-nero:       #353535;
@@ -30,8 +32,8 @@
       --radius-sm:             6px;
       --radius-md:             10px;
       --radius-lg:             16px;
-      --shadow-card:           0 2px 12px rgba(0, 61, 165, 0.10);
-      --shadow-card-hover:     0 6px 24px rgba(0, 61, 165, 0.18);
+      --shadow-card:           0 2px 12px rgba(9, 88, 217, 0.10);
+      --shadow-card-hover:     0 6px 24px rgba(9, 88, 217, 0.18);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,53 +45,6 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-    }
-
-    /* ───────── HEADER ───────── */
-    .topbar-red {
-      background: var(--color-secondary);
-      height: 4px;
-    }
-
-    header {
-      background: var(--color-white);
-      height: var(--topbar-height);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-inner {
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    /* RE/MAX SVG balloon logo */
-    .logo-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .logo-img {
-      height: 44px;
-      width: auto;
-    }
-
-    .header-subtitle {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--color-grey-wolf);
-      letter-spacing: 0.5px;
     }
 
     /* ───────── MAIN ───────── */
@@ -228,7 +183,8 @@
     input[type="text"],
     input[type="email"],
     input[type="number"],
-    input[type="file"] {
+    input[type="file"],
+    select {
       width: 100%;
       height: 48px;
       border: 1.5px solid var(--color-grey-unicorn);
@@ -245,10 +201,29 @@
 
     input:focus {
       border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.12);
+      box-shadow: 0 0 0 3px rgba(9, 88, 217, 0.12);
     }
 
     input.error {
+      border-color: var(--color-error);
+      box-shadow: 0 0 0 3px rgba(176, 0, 32, 0.1);
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237e7e7e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(9, 88, 217, 0.12);
+    }
+
+    select.error {
       border-color: var(--color-error);
       box-shadow: 0 0 0 3px rgba(176, 0, 32, 0.1);
     }
@@ -279,7 +254,7 @@
 
     .file-input-wrap.focused {
       border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.12);
+      box-shadow: 0 0 0 3px rgba(9, 88, 217, 0.12);
     }
 
     .file-input-wrap.error {
@@ -376,6 +351,104 @@
       color: var(--color-white);
     }
 
+    /* ───────── VIEW TOGGLE ───────── */
+    .view-toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      background: var(--color-grey-unicorn);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+
+    .view-toggle-btn {
+      width: 32px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--color-grey-silver);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, color 0.18s;
+      flex-shrink: 0;
+    }
+
+    .view-toggle-btn.active {
+      background: var(--color-white);
+      color: var(--color-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    }
+
+    .view-toggle-btn svg { width: 16px; height: 16px; }
+
+    /* ───────── TABS ───────── */
+    .tabs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      position: relative;
+      height: 36px;
+      padding: 0 14px;
+      border: 1.5px solid var(--color-grey-unicorn);
+      border-radius: var(--radius-sm);
+      background: var(--color-grey-silk);
+      color: var(--color-grey-wolf);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: var(--color-grey-unicorn);
+      border-color: var(--color-grey-iron);
+    }
+
+    .tab-btn.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    .tab-btn.has-error {
+      border-color: var(--color-error);
+      color: var(--color-error);
+    }
+
+    .tab-btn.active.has-error {
+      background: var(--color-error);
+      border-color: var(--color-error);
+      color: var(--color-white);
+    }
+
+    /* Punto rojo de error en tab inactiva */
+    .tab-btn.has-error::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-error);
+    }
+
+    .tab-btn.active.has-error::after { background: var(--color-white); }
+
+    /* Panel de tab */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
     /* ───────── FIRMANTE CARD ───────── */
     .signer-card {
       background: var(--color-grey-cloud);
@@ -436,12 +509,12 @@
       cursor: pointer;
       text-decoration: none;
       transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 2px 8px rgba(0, 61, 165, 0.25);
+      box-shadow: 0 2px 8px rgba(9, 88, 217, 0.25);
     }
 
     .btn-primary:hover {
       background: var(--color-primary-dark1);
-      box-shadow: 0 4px 16px rgba(0, 61, 165, 0.35);
+      box-shadow: 0 4px 16px rgba(9, 88, 217, 0.35);
       transform: translateY(-1px);
     }
 
@@ -491,6 +564,101 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ───────── WIZARD ───────── */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    .step.done { cursor: pointer; }
+    .step.done:hover .step-num { filter: brightness(0.88); }
+
+    .wizard-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 48px;
+      padding: 0 24px;
+      background: transparent;
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    .btn-secondary.hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Paso 3 — resumen */
+    .summary-section { margin-bottom: 24px; }
+    .summary-section:last-child { margin-bottom: 0; }
+
+    .summary-section-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--color-grey-silver);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--color-grey-unicorn);
+      font-size: 0.875rem;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+
+    .summary-label {
+      font-weight: 600;
+      color: var(--color-grey-wolf);
+      flex-shrink: 0;
+      width: 140px;
+    }
+
+    .summary-value {
+      color: var(--color-grey-nero);
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .summary-firmante {
+      background: var(--color-grey-cloud);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .summary-firmante:last-child { margin-bottom: 0; }
+
+    .summary-firmante-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
 
     /* ───────── MODAL ───────── */
     .modal-overlay {
@@ -595,26 +763,8 @@
 
 <body>
 
-  <!-- Red accent bar (exactamente como remax.com.ar) -->
-  <div class="topbar-red"></div>
-
-  <!-- ─── HEADER ─── -->
-  <header>
-    <div class="header-inner">
-      <a href="#" class="logo-wrap">
-        <img src="logo-remax-argentina-new.svg" alt="REMAX Argentina" class="logo-img" />
-      </a>
-      <span class="header-subtitle">Gestión de Documentos</span>
-    </div>
-  </header>
-
   <!-- ─── MAIN ─── -->
   <main>
-    <div class="page-header">
-      <h1>Enviar Documento a Firmar</h1>
-      <p>Cargá el documento y completá los datos de cada firmante.</p>
-    </div>
-
     <!-- Steps indicator -->
     <div class="steps" id="steps">
       <div class="step active" id="step-1">
@@ -633,7 +783,8 @@
       </div>
     </div>
 
-    <!-- ─── CARD 1: Documento ─── -->
+    <!-- ─── PANEL 1: Documento ─── -->
+    <div class="step-panel active" id="panel-paso-1">
     <div class="card" id="card-documento">
       <div class="card-title">
         <div class="card-title-icon">
@@ -643,6 +794,24 @@
           </svg>
         </div>
         Documento a firmar
+      </div>
+
+      <div class="form-group">
+        <label for="tipo-documento">Tipo de Documento <span class="required-star">*</span></label>
+        <select id="tipo-documento">
+          <option value="">-- Seleccioná el tipo --</option>
+          <option value="Carta Oferta">Carta Oferta</option>
+          <option value="Reserva">Reserva</option>
+          <option value="Contrato de Alquiler">Contrato de Alquiler</option>
+          <option value="Boleto de Compra/Venta">Boleto de Compra/Venta</option>
+        </select>
+        <span class="field-error" id="error-tipo-documento">Seleccioná el tipo de documento.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="nro-operacion">Nro. de Operación / Ref. <span class="required-star">*</span></label>
+        <input type="text" id="nro-operacion" placeholder="Ej: OP-2026-001" />
+        <span class="field-error" id="error-nro-operacion">Ingresá el número de operación o referencia.</span>
       </div>
 
       <div class="form-group">
@@ -666,8 +835,10 @@
         <span class="field-error" id="error-firmantes">Debe haber al menos 1 firmante.</span>
       </div>
     </div>
+    </div>
 
-    <!-- ─── CARD 2: Firmantes (generados dinámicamente) ─── -->
+    <!-- ─── PANEL 2: Firmantes ─── -->
+    <div class="step-panel" id="panel-paso-2">
     <div class="card" id="card-firmantes">
       <div class="card-title">
         <div class="card-title-icon">
@@ -677,15 +848,48 @@
           </svg>
         </div>
         Datos de los firmantes
+        <!-- Toggle lista / tabs -->
+        <div class="view-toggle" title="Cambiar vista">
+          <button class="view-toggle-btn" id="btn-vista-lista" type="button" title="Vista lista" aria-label="Vista lista">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+          </button>
+          <button class="view-toggle-btn active" id="btn-vista-tabs" type="button" title="Vista tabs" aria-label="Vista tabs">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 4h8v2H3V7zm0 4h6v2H3v-2zm10-4h8v14H3V11h18v2H5v6h14V7H13V7z"/><path d="M1 5h22v16H1V5zm2 2v12h18V7H3zm2 2h5v3H5V9zm7 0h5v3h-5V9z"/></svg>
+          </button>
+        </div>
       </div>
       <div id="firmantes-container">
         <!-- Los firmantes se insertan aquí dinámicamente -->
       </div>
     </div>
+    </div>
 
-    <!-- ─── ACCIÓN: Enviar ─── -->
-    <div class="action-bar">
-      <button class="btn-primary btn-send btn-full" id="btn-enviar" type="button">
+    <!-- ─── PANEL 3: Confirmar y enviar ─── -->
+    <div class="step-panel" id="panel-paso-3">
+      <div class="card" id="card-resumen">
+        <div class="card-title">
+          <div class="card-title-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 16.2l-3.5-3.5-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.2z"/>
+            </svg>
+          </div>
+          Confirmar y enviar
+        </div>
+        <div id="resumen-container"></div>
+      </div>
+    </div>
+
+    <!-- ─── WIZARD NAV ─── -->
+    <div class="wizard-nav" id="wizard-nav">
+      <button class="btn-secondary hidden" id="btn-anterior" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        Anterior
+      </button>
+      <button class="btn-primary btn-next" id="btn-siguiente" type="button">
+        Siguiente
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </button>
+      <button class="btn-primary btn-send" id="btn-enviar" type="button" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z" fill="currentColor"/>
         </svg>
@@ -712,12 +916,6 @@
     </div>
   </div>
 
-  <!-- ─── FOOTER ─── -->
-  <footer>
-    &copy; <span id="year"></span> REMAX Argentina &mdash;
-    <a href="https://www.remax.com.ar/">www.remax.com.ar</a>
-  </footer>
-
   <!-- ─── SignZen API ─── -->
   <script src="signzen-api.js"></script>
 
@@ -725,12 +923,12 @@
   <script>
     'use strict';
 
-    /* ── Año actual en footer ── */
-    document.getElementById('year').textContent = new Date().getFullYear();
-
     /* ── Estado ── */
     const state = {
       cantidadFirmantes: 1,
+      vistaTab: true,
+      tabActiva: 0,
+      pasoActual: 1,
     };
 
     /* ── Referencia a elementos ── */
@@ -742,50 +940,48 @@
     const modalOverlay       = document.getElementById('modal-overlay');
     const btnModalCerrar     = document.getElementById('btn-modal-cerrar');
     const modalBody          = document.getElementById('modal-body');
+    const btnVistaLista      = document.getElementById('btn-vista-lista');
+    const btnVistaTabs       = document.getElementById('btn-vista-tabs');
+    const btnAnterior        = document.getElementById('btn-anterior');
+    const btnSiguiente       = document.getElementById('btn-siguiente');
 
-    /* ── Generar formularios de firmantes ── */
-    function renderFirmantes() {
-      firmantesContainer.innerHTML = '';
-
-      for (let i = 0; i < state.cantidadFirmantes; i++) {
-        const num = i + 1;
-        const div = document.createElement('div');
-        div.className = 'signer-card';
-        div.dataset.index = i;
-        div.innerHTML = `
-          <div class="signer-header">
-            <span class="signer-badge">Firmante ${num}</span>
-            <span class="signer-name-preview" id="preview-nombre-${i}"></span>
+    /* ── Función para generar el HTML interno de un firmante ── */
+    function signerFormHTML(i) {
+      const num = i + 1;
+      return `
+        <div class="signer-grid">
+          <div class="form-group">
+            <label for="nombre-${i}">Nombre <span class="required-star">*</span></label>
+            <input type="text" id="nombre-${i}" placeholder="Ej: Juan" autocomplete="given-name" />
+            <span class="field-error" id="error-nombre-${i}">Ingresá el nombre.</span>
           </div>
-          <div class="signer-grid">
-            <div class="form-group">
-              <label for="nombre-${i}">Nombre <span class="required-star">*</span></label>
-              <input type="text" id="nombre-${i}" placeholder="Ej: Juan" autocomplete="given-name" />
-              <span class="field-error" id="error-nombre-${i}">Ingresá el nombre.</span>
-            </div>
-            <div class="form-group">
-              <label for="apellido-${i}">Apellido <span class="required-star">*</span></label>
-              <input type="text" id="apellido-${i}" placeholder="Ej: Pérez" autocomplete="family-name" />
-              <span class="field-error" id="error-apellido-${i}">Ingresá el apellido.</span>
-            </div>
-            <div class="form-group">
-              <label for="dni-${i}">DNI <span class="required-star">*</span></label>
-              <input type="text" id="dni-${i}" placeholder="Ej: 28456789" maxlength="8" inputmode="numeric" />
-              <span class="field-error" id="error-dni-${i}">Ingresá un DNI válido (7-8 dígitos).</span>
-            </div>
-            <div class="form-group">
-              <label for="email-${i}">Email <span class="required-star">*</span></label>
-              <input type="email" id="email-${i}" placeholder="juan@email.com" autocomplete="email" />
-              <span class="field-error" id="error-email-${i}">Ingresá un email válido.</span>
-            </div>
+          <div class="form-group">
+            <label for="apellido-${i}">Apellido <span class="required-star">*</span></label>
+            <input type="text" id="apellido-${i}" placeholder="Ej: Pérez" autocomplete="family-name" />
+            <span class="field-error" id="error-apellido-${i}">Ingresá el apellido.</span>
           </div>
-        `;
-        firmantesContainer.appendChild(div);
+          <div class="form-group">
+            <label for="dni-${i}">DNI <span class="required-star">*</span></label>
+            <input type="text" id="dni-${i}" placeholder="Ej: 28456789" maxlength="8" inputmode="numeric" />
+            <span class="field-error" id="error-dni-${i}">Ingresá un DNI válido (7-8 dígitos).</span>
+          </div>
+          <div class="form-group">
+            <label for="email-${i}">Email <span class="required-star">*</span></label>
+            <input type="email" id="email-${i}" placeholder="juan@email.com" autocomplete="email" />
+            <span class="field-error" id="error-email-${i}">Ingresá un email válido.</span>
+          </div>
+        </div>
+      `;
+    }
 
-        /* Actualizar preview con Nombre + Apellido en tiempo real */
-        const nombreInput   = div.querySelector(`#nombre-${i}`);
-        const apellidoInput = div.querySelector(`#apellido-${i}`);
-        const preview       = div.querySelector(`#preview-nombre-${i}`);
+    /* ── Adjuntar listeners a los inputs de un firmante ── */
+    function attachSignerListeners(container, i) {
+      const nombreInput   = container.querySelector(`#nombre-${i}`);
+      const apellidoInput = container.querySelector(`#apellido-${i}`);
+      const preview       = container.querySelector(`#preview-nombre-${i}`);
+      const dniInput      = container.querySelector(`#dni-${i}`);
+
+      if (preview) {
         const actualizarPreview = () => {
           const n = nombreInput.value.trim();
           const a = apellidoInput.value.trim();
@@ -793,23 +989,114 @@
         };
         nombreInput.addEventListener('input', actualizarPreview);
         apellidoInput.addEventListener('input', actualizarPreview);
-
-        /* Sólo números en DNI */
-        const dniInput = div.querySelector(`#dni-${i}`);
-        dniInput.addEventListener('input', () => {
-          dniInput.value = dniInput.value.replace(/\D/g, '');
-        });
+      } else {
+        /* En vista tabs el preview está en la tab, no en el panel */
+        const actualizarTab = () => {
+          const n = nombreInput.value.trim();
+          const a = apellidoInput.value.trim();
+          const tabBtn = document.getElementById(`tab-btn-${i}`);
+          if (tabBtn) {
+            const label = (n || a) ? `${n} ${a}`.trim() : `Firmante ${i + 1}`;
+            tabBtn.dataset.label = label;
+            const span = tabBtn.querySelector('span');
+            if (span) span.textContent = label;
+          }
+        };
+        nombreInput.addEventListener('input', actualizarTab);
+        apellidoInput.addEventListener('input', actualizarTab);
       }
 
-      actualizarSteps();
+      dniInput.addEventListener('input', () => {
+        dniInput.value = dniInput.value.replace(/\D/g, '');
+      });
+    }
+
+    /* ── Generar formularios de firmantes ── */
+    function renderFirmantes() {
+      firmantesContainer.innerHTML = '';
+
+      if (state.vistaTab) {
+        /* ── VISTA TABS ── */
+        const tabsBar = document.createElement('div');
+        tabsBar.className = 'tabs-bar';
+        tabsBar.id = 'tabs-bar';
+
+        for (let i = 0; i < state.cantidadFirmantes; i++) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'tab-btn' + (i === state.tabActiva ? ' active' : '');
+          btn.id = `tab-btn-${i}`;
+          btn.dataset.label = `Firmante ${i + 1}`;
+          btn.innerHTML = `<span>${'Firmante ' + (i + 1)}</span>`;
+          btn.addEventListener('click', () => {
+            state.tabActiva = i;
+            document.querySelectorAll('.tab-btn').forEach((b, idx) => {
+              b.classList.toggle('active', idx === i);
+            });
+            document.querySelectorAll('.tab-panel').forEach((p, idx) => {
+              p.classList.toggle('active', idx === i);
+            });
+          });
+          tabsBar.appendChild(btn);
+        }
+        firmantesContainer.appendChild(tabsBar);
+
+        for (let i = 0; i < state.cantidadFirmantes; i++) {
+          const panel = document.createElement('div');
+          panel.className = 'tab-panel signer-card' + (i === state.tabActiva ? ' active' : '');
+          panel.id = `tab-panel-${i}`;
+          panel.innerHTML = signerFormHTML(i);
+          firmantesContainer.appendChild(panel);
+          attachSignerListeners(panel, i);
+        }
+
+      } else {
+        /* ── VISTA LISTA ── */
+        for (let i = 0; i < state.cantidadFirmantes; i++) {
+          const num = i + 1;
+          const div = document.createElement('div');
+          div.className = 'signer-card';
+          div.dataset.index = i;
+          div.innerHTML = `
+            <div class="signer-header">
+              <span class="signer-badge">Firmante ${num}</span>
+              <span class="signer-name-preview" id="preview-nombre-${i}"></span>
+            </div>
+            ${signerFormHTML(i)}
+          `;
+          firmantesContainer.appendChild(div);
+          attachSignerListeners(div, i);
+        }
+      }
+
     }
 
     /* ── Actualizar indicador de pasos ── */
     function actualizarSteps() {
-      const doc = document.getElementById('documento').files.length > 0;
-      document.getElementById('step-1').className = 'step' + (doc ? ' done' : ' active');
-      document.getElementById('step-2').className = 'step active';
-      document.getElementById('step-3').className = 'step';
+      for (let s = 1; s <= 3; s++) {
+        const el = document.getElementById(`step-${s}`);
+        if (s < state.pasoActual)        el.className = 'step done';
+        else if (s === state.pasoActual) el.className = 'step active';
+        else                             el.className = 'step';
+      }
+    }
+
+    /* ── Mostrar paso del wizard ── */
+    function mostrarPaso(n) {
+      state.pasoActual = n;
+      for (let s = 1; s <= 3; s++) {
+        document.getElementById(`panel-paso-${s}`).classList.toggle('active', s === n);
+      }
+      actualizarSteps();
+      btnAnterior.classList.toggle('hidden', n === 1);
+      if (n === 3) {
+        btnSiguiente.style.display = 'none';
+        btnEnviar.style.display    = '';
+      } else {
+        btnSiguiente.style.display = '';
+        btnEnviar.style.display    = 'none';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     /* ── Controles +/- ── */
@@ -822,7 +1109,7 @@
     });
 
     btnMas.addEventListener('click', () => {
-      if (state.cantidadFirmantes < 3) {
+      if (state.cantidadFirmantes < 10) {
         state.cantidadFirmantes++;
         cantidadInput.value = state.cantidadFirmantes;
         renderFirmantes();
@@ -833,10 +1120,72 @@
     cantidadInput.addEventListener('change', () => {
       let val = parseInt(cantidadInput.value, 10);
       if (isNaN(val) || val < 1) val = 1;
-      if (val > 3) val = 3;
+      if (val > 10) val = 10;
       state.cantidadFirmantes = val;
       cantidadInput.value = val;
       renderFirmantes();
+    });
+
+    /* ── Toggle vista lista / tabs ── */
+    btnVistaLista.addEventListener('click', () => {
+      if (!state.vistaTab) return;
+      state.vistaTab = false;
+      state.tabActiva = 0;
+      btnVistaLista.classList.add('active');
+      btnVistaTabs.classList.remove('active');
+      renderFirmantes();
+    });
+
+    btnVistaTabs.addEventListener('click', () => {
+      if (state.vistaTab) return;
+      state.vistaTab = true;
+      state.tabActiva = 0;
+      btnVistaTabs.classList.add('active');
+      btnVistaLista.classList.remove('active');
+      renderFirmantes();
+    });
+
+    /* ── Navegación del wizard ── */
+    btnAnterior.addEventListener('click', () => {
+      mostrarPaso(state.pasoActual - 1);
+    });
+
+    btnSiguiente.addEventListener('click', () => {
+      if (state.pasoActual === 1) {
+        if (!validarPaso1()) {
+          const firstError = document.querySelector('.file-input-wrap.error, select.error, input.error');
+          if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        mostrarPaso(2);
+      } else if (state.pasoActual === 2) {
+        if (!validarPaso2()) {
+          if (state.vistaTab) {
+            const firstErrTab = document.querySelector('.tab-btn.has-error');
+            if (firstErrTab) {
+              const idx = parseInt(firstErrTab.id.replace('tab-btn-', ''), 10);
+              state.tabActiva = idx;
+              document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+              document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+              firstErrTab.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          } else {
+            const firstError = document.querySelector('input.error');
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+        }
+        renderResumen();
+        mostrarPaso(3);
+      }
+    });
+
+    /* ── Step indicator: ir atrás ── */
+    document.getElementById('step-1').addEventListener('click', () => {
+      if (state.pasoActual > 1) mostrarPaso(1);
+    });
+    document.getElementById('step-2').addEventListener('click', () => {
+      if (state.pasoActual > 2) mostrarPaso(2);
     });
 
     /* ── Validación ── */
@@ -853,16 +1202,30 @@
       }
     }
 
-    function validarFormulario() {
+    function validarPaso1() {
       let valido = true;
 
-      /* Documento */
+      const tipoDoc = document.getElementById('tipo-documento');
+      const tipoDocInvalido = !tipoDoc.value;
+      setFieldError('tipo-documento', 'error-tipo-documento', tipoDocInvalido);
+      if (tipoDocInvalido) valido = false;
+
+      const nroOp = document.getElementById('nro-operacion');
+      const nroOpInvalido = !nroOp.value.trim();
+      setFieldError('nro-operacion', 'error-nro-operacion', nroOpInvalido);
+      if (nroOpInvalido) valido = false;
+
       const docInput = document.getElementById('documento');
       const sinDoc = docInput.files.length === 0;
       setFileError(sinDoc);
       if (sinDoc) valido = false;
 
-      /* Firmantes */
+      return valido;
+    }
+
+    function validarPaso2() {
+      let valido = true;
+
       for (let i = 0; i < state.cantidadFirmantes; i++) {
         const nombre   = document.getElementById(`nombre-${i}`);
         const apellido = document.getElementById(`apellido-${i}`);
@@ -879,7 +1242,13 @@
         setFieldError(`dni-${i}`,      `error-dni-${i}`,      dniInvalido);
         setFieldError(`email-${i}`,    `error-email-${i}`,    emailInvalido);
 
-        if (nombreInvalido || apellidoInvalido || dniInvalido || emailInvalido) valido = false;
+        const firmanteTieneError = nombreInvalido || apellidoInvalido || dniInvalido || emailInvalido;
+        if (firmanteTieneError) valido = false;
+
+        if (state.vistaTab) {
+          const tabBtn = document.getElementById(`tab-btn-${i}`);
+          if (tabBtn) tabBtn.classList.toggle('has-error', firmanteTieneError);
+        }
       }
 
       return valido;
@@ -910,7 +1279,6 @@
       /* Quitar error */
       fileWrap.classList.remove('error');
       document.getElementById('error-documento').classList.remove('visible');
-      actualizarSteps();
     });
 
     /* Adaptar validación para usar fileWrap en vez de input */
@@ -926,15 +1294,9 @@
 
     /* ── Envío ── */
     btnEnviar.addEventListener('click', async () => {
-      if (!validarFormulario()) {
-        /* Scroll al primer error */
-        const firstError = document.querySelector('.file-input-wrap.error, input.error');
-        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-
-      /* Recolectar datos de firmantes */
-      const docFile  = document.getElementById('documento').files[0];
+      const docFile       = document.getElementById('documento').files[0];
+      const tipoDocumento = document.getElementById('tipo-documento').value;
+      const nroOperacion  = document.getElementById('nro-operacion').value.trim();
       const firmantes = [];
 
       for (let i = 0; i < state.cantidadFirmantes; i++) {
@@ -948,13 +1310,12 @@
 
       /* UI: loading */
       btnEnviar.disabled = true;
+      btnAnterior.disabled = true;
       btnEnviar.innerHTML = `<span class="spinner"></span> Enviando...`;
 
       try {
-        /* Llamada a la API de SignZen (definida en signzen-api.js) */
-        await enviarSignZen(firmantes, docFile);
+        await enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion);
 
-        /* Mostrar modal de éxito */
         modalBody.innerHTML = `
           El documento <strong>"${sanitize(docFile.name)}"</strong> fue enviado correctamente.<br/>
           Los <strong>${firmantes.length}</strong> firmante${firmantes.length > 1 ? 's' : ''}
@@ -966,6 +1327,7 @@
         alert(`Error al enviar el documento: ${err.message}\n\nVerificá la conexión y volvé a intentarlo.`);
       } finally {
         btnEnviar.disabled = false;
+        btnAnterior.disabled = false;
         btnEnviar.innerHTML = `
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z" fill="currentColor"/>
@@ -981,8 +1343,13 @@
     }
 
     function limpiarFormulario() {
-      /* Resetear cantidad de firmantes */
+      /* Resetear tipo de documento y nro. de operación */
+      document.getElementById('tipo-documento').value = '';
+      document.getElementById('nro-operacion').value = '';
+
+      /* Resetear cantidad de firmantes y tab activa */
       state.cantidadFirmantes = 1;
+      state.tabActiva = 0;
       cantidadInput.value = 1;
       renderFirmantes();
 
@@ -991,6 +1358,8 @@
       fileNameEl.textContent = 'Ningún archivo seleccionado';
       fileNameEl.classList.remove('selected');
       fileWrap.classList.remove('error');
+      /* Volver al paso 1 */
+      mostrarPaso(1);
     }
 
     function cerrarModal() {
@@ -1014,6 +1383,61 @@
       const div = document.createElement('div');
       div.appendChild(document.createTextNode(str));
       return div.innerHTML;
+    }
+
+    /* ── Resumen (paso 3) ── */
+    function renderResumen() {
+      const resumen    = document.getElementById('resumen-container');
+      const tipoDoc    = document.getElementById('tipo-documento').value;
+      const nroOp      = document.getElementById('nro-operacion').value.trim();
+      const archivoNom = document.getElementById('file-name').textContent;
+
+      let html = `
+        <div class="summary-section">
+          <div class="summary-section-title">Documento</div>
+          <div class="summary-row">
+            <span class="summary-label">Tipo</span>
+            <span class="summary-value">${sanitize(tipoDoc)}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Operación / Ref.</span>
+            <span class="summary-value">${sanitize(nroOp)}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Archivo</span>
+            <span class="summary-value">${sanitize(archivoNom)}</span>
+          </div>
+        </div>
+        <div class="summary-section">
+          <div class="summary-section-title">Firmantes (${state.cantidadFirmantes})</div>
+      `;
+
+      for (let i = 0; i < state.cantidadFirmantes; i++) {
+        const nombre   = document.getElementById(`nombre-${i}`).value.trim();
+        const apellido = document.getElementById(`apellido-${i}`).value.trim();
+        const dni      = document.getElementById(`dni-${i}`).value.trim();
+        const email    = document.getElementById(`email-${i}`).value.trim();
+        html += `
+          <div class="summary-firmante">
+            <div class="summary-firmante-title">Firmante ${i + 1}</div>
+            <div class="summary-row">
+              <span class="summary-label">Nombre completo</span>
+              <span class="summary-value">${sanitize(nombre)} ${sanitize(apellido)}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">DNI</span>
+              <span class="summary-value">${sanitize(dni)}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Email</span>
+              <span class="summary-value">${sanitize(email)}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      resumen.innerHTML = html;
     }
 
     /* ── Init ── */

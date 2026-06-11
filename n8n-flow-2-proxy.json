@@ -8,11 +8,11 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "id": "4f0b541b-7268-4cb5-a77e-30b4602323e5",
       "name": "POST /remax/enviar",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [368, 240],
       "webhookId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     },
     {
@@ -20,11 +20,11 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Normaliza el body según la versión de n8n.\n// En algunas versiones el webhook expone el body en $json.body;\n// en otras, $json ES el body directamente.\nconst incoming = $input.first().json;\nconst body = (incoming.body && typeof incoming.body === 'object')\n  ? incoming.body\n  : incoming;\nreturn [{ json: body }];"
       },
-      "id": "ffffffff-0000-0000-0000-000000000001",
+      "id": "c0a57a5f-28c8-4000-9636-7512f171d8a4",
       "name": "Normalizar body",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [470, 300]
+      "position": [592, 240]
     },
     {
       "parameters": {
@@ -47,13 +47,15 @@
         "contentType": "raw",
         "rawContentType": "application/json-patch+json",
         "body": "={{ JSON.stringify($json) }}",
-        "options": {}
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
       },
-      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "id": "4241bdbb-53e9-4c15-849f-0e6f1063d949",
       "name": "Llamar SignZen API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [690, 300],
+      "position": [816, 240],
       "continueOnFail": true
     },
     {
@@ -61,11 +63,11 @@
         "mode": "runOnceForAllItems",
         "jsCode": "const item = $input.first();\n\nif (item.error) {\n  const errMsg = item.error.message ?? JSON.stringify(item.json);\n  const match = errMsg.match(/^(\\d{3})\\s+-/);\n  const statusCode = match ? parseInt(match[1]) : 502;\n  return [{ json: { statusCode, responseBody: JSON.stringify({ error: errMsg }) } }];\n}\n\n// Éxito: item.json es la respuesta de SignZen directamente\nreturn [{ json: { statusCode: 200, responseBody: JSON.stringify(item.json) } }];"
       },
-      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "id": "dc76cbac-9b0e-44e8-9624-303d4336c003",
       "name": "Preparar respuesta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [690, 300]
+      "position": [1040, 240]
     },
     {
       "parameters": {
@@ -78,16 +80,20 @@
               {
                 "name": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
               }
             ]
           }
         }
       },
-      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "id": "6765cabf-ce7e-40e4-9669-e30d249c2242",
       "name": "Responder al Frontend",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1130, 300]
+      "position": [1248, 240]
     }
   ],
   "pinData": {},
@@ -119,7 +125,7 @@
   },
   "versionId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "instanceId": "632fbca773cdea0a21e07f6adc6c37100964ed45e6107115a1dbed86183941b0"
   },
   "id": "remax-proxy-flow",
   "tags": []
