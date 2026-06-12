@@ -97,7 +97,15 @@ function buildFlow1() {
   const inlineScript = `<script>\n${api}\n  </script>`;
   html = html.replace('<script src="signzen-api.js"></script>', inlineScript);
 
-  const jsCode = `return [{ json: { html: ${JSON.stringify(html)} } }];`;
+  const htmlStr = JSON.stringify(html);
+  const jsCode = [
+    `const groupId = ($input.first().json.query && $input.first().json.query.groupId)`,
+    `  ? String($input.first().json.query.groupId).replace(/[^a-zA-Z0-9\\-_]/g, '')`,
+    `  : '';`,
+    `const injected = '<script>window.REMAX_GROUP_ID="' + groupId + '";<\\/script>';`,
+    `const html = ${htmlStr}.replace('<!-- __GROUP_ID__ -->', injected);`,
+    `return [{ json: { html } }];`,
+  ].join('\n');
 
   const flow = {
     name: "REMAX — 1. Servir Frontend (HTML embebido)",

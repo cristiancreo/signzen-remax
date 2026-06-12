@@ -18,59 +18,7 @@ const N8N_PROXY_URL = 'https://square-regular-honeybee.ngrok-free.app/webhook/re
 
 const EXTERNAL_CODE = '1976';
 
-/** Configuración por cantidad de firmantes */
-const TEMPLATES = {
-  1: {
-    templateKey:        'remax1p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: '5bf06170-954f-42ca-a18a-eecdbe87ec26',
-  },
-  2: {
-    templateKey:        'remax2p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: 'fd1a8d5c-112b-44bb-a372-f0a09d55c032',
-  },
-  3: {
-    templateKey:        'remax3p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: '5ee48967-c5bf-4de0-accb-caf7d758ca7a',
-  },
-  4: {
-    templateKey:        'remax4p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: 'b4ccc58d-cd59-485e-a17e-5ec78d53ddec',
-  },
-  5: {
-    templateKey:        'remax5p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: '19aa3b8f-07db-4ce8-8457-bd7c70608c4f',
-  },
-  6: {
-    templateKey:        'remax6p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: 'dc7f4f13-f4bd-41b0-9f1e-33b44481120b',
-  },
-  7: {
-    templateKey:        'remax7p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: 'ab572c7e-3b24-4a2d-92d2-d203949524d6',
-  },
-  8: {
-    templateKey:        'remax8p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: '5c98dc3b-7424-4c65-b6d1-71b4cda1f847',
-  },
-  9: {
-    templateKey:        'remax9p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: '240dd7d6-7a56-4319-92cd-59c70d42e26d',
-  },
-  10: {
-    templateKey:        'remax10p',
-    groupId:            'd7230a45-84f9-4572-972c-678947f70852',
-    documentTemplateId: 'dd332f31-942b-4b65-9f91-91173639c330',
-  },
-};
+
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
@@ -111,14 +59,16 @@ function archivoABase64(file) {
  * @returns {Object} Body listo para JSON.stringify().
  */
 function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
-  const n        = firmantes.length;
-  const template = TEMPLATES[n];
+  const n           = firmantes.length;
+  const groupId     = window.REMAX_GROUP_ID;
+  const templateKey = `remax${n}p`;
 
-  if (!template) {
+  if (!groupId) {
+    throw new Error('groupId no disponible. Verifique el parámetro en la URL.');
+  }
+  if (n < 1 || n > 10) {
     throw new Error(`Cantidad de firmantes no soportada: ${n}. Máximo permitido: 10.`);
   }
-
-  const { templateKey, groupId, documentTemplateId } = template;
 
   /* Array de participantes — uno por firmante */
   const participants = firmantes.map((f, i) => ({
@@ -165,7 +115,6 @@ function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
     forms,
     documents: [
       {
-        documentTemplateId,
         type:   'Base64',
         base64: base64Doc,
       },

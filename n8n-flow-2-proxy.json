@@ -12,7 +12,10 @@
       "name": "POST /remax/enviar",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [368, 240],
+      "position": [
+        368,
+        240
+      ],
       "webhookId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     },
     {
@@ -24,7 +27,10 @@
       "name": "Normalizar body",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [592, 240]
+      "position": [
+        592,
+        240
+      ]
     },
     {
       "parameters": {
@@ -55,7 +61,10 @@
       "name": "Llamar SignZen API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [816, 240],
+      "position": [
+        1712,
+        240
+      ],
       "continueOnFail": true
     },
     {
@@ -67,7 +76,10 @@
       "name": "Preparar respuesta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1040, 240]
+      "position": [
+        1936,
+        240
+      ]
     },
     {
       "parameters": {
@@ -93,29 +105,190 @@
       "name": "Responder al Frontend",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1248, 240]
+      "position": [
+        2160,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://signzenv2-api.signzen-demo.com.ar/api/Templates/Search?GroupId={{ $json.groupId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic Y2NyZW9AZ3J1cG9scGEuY29tOjEyMzQ1Njc4"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "a1000001-0000-0000-0000-000000000001",
+      "name": "Buscar Plantilla",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        816,
+        240
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const templateData = $input.first().json;\nconst body = $('Normalizar body').first().json;\n\nconst templateKey = body.templateKey;\nconst templates = (templateData.data || []);\nconst found = templates.find(t => t.key === templateKey);\n\nif (!found) {\n  throw new Error('No se encontró plantilla con key=\"' + templateKey + '\" para groupId=' + body.groupId);\n}\n\nreturn [{ json: { templateId: found.id, body } }];"
+      },
+      "id": "a1000002-0000-0000-0000-000000000002",
+      "name": "Resolver templateId",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://signzenv2-api.signzen-demo.com.ar/api/Documents/Search?TemplateId={{ $json.templateId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic Y2NyZW9AZ3J1cG9scGEuY29tOjEyMzQ1Njc4"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "a1000003-0000-0000-0000-000000000003",
+      "name": "Buscar Documento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1264,
+        240
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const docData = $input.first().json;\nconst { body } = $('Resolver templateId').first().json;\n\nconst docs = (docData.data || []);\nconst found = docs.find(d => d.key === 'documento');\n\nif (!found) {\n  throw new Error('No se encontró documento con key=\"documento\" en la plantilla');\n}\n\n// Inyectar documentTemplateId en el primer elemento de documents[]\nconst enrichedBody = JSON.parse(JSON.stringify(body));\nif (enrichedBody.documents && enrichedBody.documents.length > 0) {\n  enrichedBody.documents[0].documentTemplateId = found.id;\n} else {\n  throw new Error('El body no contiene documentos');\n}\n\nreturn [{ json: enrichedBody }];"
+      },
+      "id": "a1000004-0000-0000-0000-000000000004",
+      "name": "Resolver documentTemplateId",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        240
+      ]
     }
   ],
   "pinData": {},
   "connections": {
     "POST /remax/enviar": {
       "main": [
-        [{ "node": "Normalizar body", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Normalizar body",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Normalizar body": {
       "main": [
-        [{ "node": "Llamar SignZen API", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Buscar Plantilla",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Llamar SignZen API": {
       "main": [
-        [{ "node": "Preparar respuesta", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Preparar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Preparar respuesta": {
       "main": [
-        [{ "node": "Responder al Frontend", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Responder al Frontend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Plantilla": {
+      "main": [
+        [
+          {
+            "node": "Resolver templateId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver templateId": {
+      "main": [
+        [
+          {
+            "node": "Buscar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Documento": {
+      "main": [
+        [
+          {
+            "node": "Resolver documentTemplateId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver documentTemplateId": {
+      "main": [
+        [
+          {
+            "node": "Llamar SignZen API",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
