@@ -16,10 +16,6 @@
 /** URL del webhook proxy en n8n (Flow 2). Ajustar con el dominio real. */
 const N8N_PROXY_URL = 'https://square-regular-honeybee.ngrok-free.app/webhook/remax/enviar';
 
-const EXTERNAL_CODE = '1976';
-
-
-
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
 /**
@@ -106,9 +102,9 @@ function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
   return {
     groupId,
     templateKey,
-    title:        `${tipoDocumento} — Op. ${nroOperacion}`,
-    description:  `${tipoDocumento} — Ref. ${nroOperacion}`,
-    externalCode: EXTERNAL_CODE,
+    title:        `${tipoDocumento} — ${nroOperacion}`,
+    description:  `${tipoDocumento} — ${nroOperacion}`,
+    externalCode: nroOperacion || '',
     sender:       '',
     expiresAt:    '',
     participants,
