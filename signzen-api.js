@@ -54,7 +54,7 @@ function archivoABase64(file) {
  * @param {string} base64Doc - Contenido del documento en Base64.
  * @returns {Object} Body listo para JSON.stringify().
  */
-function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
+function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperacion) {
   const n           = firmantes.length;
   const groupId     = window.REMAX_GROUP_ID;
   const templateKey = `remax${n}p`;
@@ -111,6 +111,7 @@ function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
     forms,
     documents: [
       {
+        fileName,
         type:   'Base64',
         base64: base64Doc,
       },
@@ -136,7 +137,7 @@ function construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion) {
  */
 async function enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion) {
   const base64Doc = await archivoABase64(docFile);
-  const body = construirBody(firmantes, base64Doc, tipoDocumento, nroOperacion);
+  const body = construirBody(firmantes, base64Doc, docFile.name, tipoDocumento, nroOperacion);
 
   // Las credenciales las agrega el proxy n8n — este fetch no lleva Authorization.
   const response = await fetch(N8N_PROXY_URL, {

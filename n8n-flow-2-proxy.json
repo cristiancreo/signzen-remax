@@ -62,7 +62,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1712,
+        2832,
         240
       ],
       "continueOnFail": true
@@ -77,7 +77,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1936,
+        3056,
         240
       ]
     },
@@ -106,7 +106,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2160,
+        3280,
         240
       ]
     },
@@ -136,7 +136,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        816,
+        1936,
         240
       ],
       "continueOnFail": false
@@ -144,14 +144,14 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const templateData = $input.first().json;\nconst body = $('Normalizar body').first().json;\n\nconst templateKey = body.templateKey;\nconst templates = (templateData.data || []);\nconst found = templates.find(t => t.key === templateKey);\n\nif (!found) {\n  throw new Error('No se encontró plantilla con key=\"' + templateKey + '\" para groupId=' + body.groupId);\n}\n\nreturn [{ json: { templateId: found.id, body } }];"
+        "jsCode": "const templateData = $input.first().json;\nconst body = $('Merge').first().json;\n\nconst templateKey = body.templateKey;\nconst templates = (templateData.data || []);\nconst found = templates.find(t => t.key === templateKey);\n\nif (!found) {\n  throw new Error('No se encontró plantilla con key=\"' + templateKey + '\" para groupId=' + body.groupId);\n}\n\nreturn [{ json: { templateId: found.id, body } }];"
       },
       "id": "a1000002-0000-0000-0000-000000000002",
       "name": "Resolver templateId",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
+        2160,
         240
       ]
     },
@@ -181,7 +181,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1264,
+        2384,
         240
       ],
       "continueOnFail": false
@@ -189,14 +189,149 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const docData = $input.first().json;\nconst { body } = $('Resolver templateId').first().json;\n\nconst docs = (docData.data || []);\nconst found = docs.find(d => d.key === 'documento');\n\nif (!found) {\n  throw new Error('No se encontró documento con key=\"documento\" en la plantilla');\n}\n\n// Inyectar documentTemplateId en el primer elemento de documents[]\nconst enrichedBody = JSON.parse(JSON.stringify(body));\nif (enrichedBody.documents && enrichedBody.documents.length > 0) {\n  enrichedBody.documents[0].documentTemplateId = found.id;\n} else {\n  throw new Error('El body no contiene documentos');\n}\n\nreturn [{ json: enrichedBody }];"
+        "jsCode": "const docData = $input.first().json;\nconst { body } = $('Resolver templateId').first().json;\n\nconst docs = (docData.data || []);\nconst found = docs.find(d => d.key === 'documento');\n\nif (!found) {\n  throw new Error('No se encontró documento con key=\"documento\" en la plantilla');\n}\n\nconst enrichedBody = JSON.parse(JSON.stringify(body));\nif (!enrichedBody.documents || enrichedBody.documents.length === 0) {\n  throw new Error('El body no contiene documentos');\n}\n\n// Inyectar documentTemplateId y limpiar campos internos que SignZen no acepta\nconst { fileName: _fn, ...cleanDoc } = enrichedBody.documents[0];\nenrichedBody.documents[0] = { ...cleanDoc, documentTemplateId: found.id };\n\nreturn [{ json: enrichedBody }];"
       },
       "id": "a1000004-0000-0000-0000-000000000004",
       "name": "Resolver documentTemplateId",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
+        2608,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-word-check",
+              "leftValue": "={{ (/\\.(doc|docx)$/i).test($json.documents?.[0]?.fileName || '') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c1000001-0000-0000-0000-000000000001",
+      "name": "IF ¿Es Word?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        816,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $input.first().json;\nconst doc = body.documents[0];\nconst ext = (doc.fileName || '').split('.').pop().toLowerCase();\nconst mimeType = ext === 'docx'\n  ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n  : 'application/msword';\n\nreturn [{\n  json: body,\n  binary: {\n    docFile: {\n      data: doc.base64,\n      mimeType,\n      fileName: doc.fileName || 'documento.' + ext,\n      fileExtension: ext,\n      fileSize: Math.ceil(doc.base64.length * 0.75),\n    }\n  }\n}];"
+      },
+      "id": "c1000002-0000-0000-0000-000000000002",
+      "name": "Preparar binario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://circular-steady-hawk.ngrok-free.app/forms/libreoffice/convert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic YWRtaW46THBhMjMyOTE="
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "docFile"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdfData"
+            }
+          }
+        }
+      },
+      "id": "c1000003-0000-0000-0000-000000000003",
+      "name": "Llamar Gotenberg",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1264,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "binaryToJson",
+        "setAllData": false,
+        "destinationKey": "pdfBase64",
+        "sourceKey": "pdfData",
+        "options": {
+          "keepAsBase64": true
+        }
+      },
+      "id": "c1000008-0000-0000-0000-000000000008",
+      "name": "PDF a Base64",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
         1488,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const pdfBase64 = $input.first().json.pdfBase64;\n\nif (!pdfBase64) {\n  throw new Error('Gotenberg no devolvió datos PDF');\n}\n\nconst body = $('Preparar binario').first().json;\nconst oldFileName = body.documents?.[0]?.fileName || 'documento.docx';\nconst pdfFileName = oldFileName.replace(/\\.docx?$/i, '.pdf');\n\nreturn [{\n  json: {\n    ...body,\n    documents: [{\n      ...body.documents[0],\n      fileName: pdfFileName,\n      base64: pdfBase64,\n    }]\n  }\n}];"
+      },
+      "id": "c1000004-0000-0000-0000-000000000004",
+      "name": "Post Gotenberg",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "c1000005-0000-0000-0000-000000000005",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1712,
         240
       ]
     }
@@ -218,29 +353,80 @@
       "main": [
         [
           {
+            "node": "IF ¿Es Word?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ¿Es Word?": {
+      "main": [
+        [
+          {
+            "node": "Preparar binario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Preparar binario": {
+      "main": [
+        [
+          {
+            "node": "Llamar Gotenberg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Gotenberg": {
+      "main": [
+        [
+          {
+            "node": "PDF a Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF a Base64": {
+      "main": [
+        [
+          {
+            "node": "Post Gotenberg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Gotenberg": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
             "node": "Buscar Plantilla",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Llamar SignZen API": {
-      "main": [
-        [
-          {
-            "node": "Preparar respuesta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Preparar respuesta": {
-      "main": [
-        [
-          {
-            "node": "Responder al Frontend",
             "type": "main",
             "index": 0
           }
@@ -285,6 +471,28 @@
         [
           {
             "node": "Llamar SignZen API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar SignZen API": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder al Frontend",
             "type": "main",
             "index": 0
           }
