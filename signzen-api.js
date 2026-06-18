@@ -54,7 +54,7 @@ function archivoABase64(file) {
  * @param {string} base64Doc - Contenido del documento en Base64.
  * @returns {Object} Body listo para JSON.stringify().
  */
-function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperacion) {
+function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperacion, expiresAt) {
   const n           = firmantes.length;
   const groupId     = window.REMAX_GROUP_ID;
   const templateKey = `remax${n}p`;
@@ -62,8 +62,8 @@ function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperaci
   if (!groupId) {
     throw new Error('groupId no disponible. Verifique el parámetro en la URL.');
   }
-  if (n < 1 || n > 10) {
-    throw new Error(`Cantidad de firmantes no soportada: ${n}. Máximo permitido: 10.`);
+  if (n < 1 || n > 3) {
+    throw new Error(`Cantidad de firmantes no soportada: ${n}. Máximo permitido: 3.`);
   }
 
   /* Array de participantes — uno por firmante */
@@ -106,7 +106,7 @@ function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperaci
     description:  `${tipoDocumento} — ${nroOperacion}`,
     externalCode: nroOperacion || '',
     sender:       '',
-    expiresAt:    '',
+    expiresAt:    expiresAt || '',
     participants,
     forms,
     documents: [
@@ -135,9 +135,9 @@ function construirBody(firmantes, base64Doc, fileName, tipoDocumento, nroOperaci
  * @returns {Promise<Object>} Respuesta de la API parseada como JSON.
  * @throws {Error} Si la respuesta HTTP no es 2xx.
  */
-async function enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion) {
+async function enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion, expiresAt) {
   const base64Doc = await archivoABase64(docFile);
-  const body = construirBody(firmantes, base64Doc, docFile.name, tipoDocumento, nroOperacion);
+  const body = construirBody(firmantes, base64Doc, docFile.name, tipoDocumento, nroOperacion, expiresAt);
 
   // Las credenciales las agrega el proxy n8n — este fetch no lleva Authorization.
   const response = await fetch(N8N_PROXY_URL, {

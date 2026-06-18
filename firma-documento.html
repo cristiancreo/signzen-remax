@@ -183,6 +183,7 @@
     input[type="text"],
     input[type="email"],
     input[type="number"],
+    input[type="datetime-local"],
     input[type="file"],
     select {
       width: 100%;
@@ -805,6 +806,9 @@
           <option value="Reserva">Reserva</option>
           <option value="Contrato de Alquiler">Contrato de Alquiler</option>
           <option value="Boleto de Compra/Venta">Boleto de Compra/Venta</option>
+          <option value="Autorización de Venta">Autorización de Venta</option>
+          <option value="Autorización de Alquiler">Autorización de Alquiler</option>
+          <option value="Otros">Otros</option>
         </select>
         <span class="field-error" id="error-tipo-documento">Seleccioná el tipo de documento.</span>
       </div>
@@ -813,6 +817,13 @@
         <label for="nro-operacion">Nro. de Operación / Ref. <span class="required-star">*</span></label>
         <input type="text" id="nro-operacion" placeholder="Ej: OP-2026-001" />
         <span class="field-error" id="error-nro-operacion">Ingresá el número de operación o referencia.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="expires-at">Fecha de Expiración <span class="required-star">*</span></label>
+        <input type="datetime-local" id="expires-at" />
+        <p class="file-hint">Por defecto: 48 hs desde ahora. No puede ser anterior al día de hoy.</p>
+        <span class="field-error" id="error-expires-at">Seleccioná una fecha de expiración válida.</span>
       </div>
 
       <div class="form-group">
@@ -830,7 +841,7 @@
         <label for="cantidad-firmantes">Cantidad de firmantes <span class="required-star">*</span></label>
         <div class="number-input-wrap">
           <button class="btn-stepper" id="btn-menos" type="button" aria-label="Restar firmante">−</button>
-          <input type="number" id="cantidad-firmantes" value="1" min="1" max="10" readonly />
+          <input type="number" id="cantidad-firmantes" value="1" min="1" max="3" readonly />
           <button class="btn-stepper" id="btn-mas" type="button" aria-label="Agregar firmante">+</button>
         </div>
         <span class="field-error" id="error-firmantes">Debe haber al menos 1 firmante.</span>
@@ -930,6 +941,7 @@
       vistaTab: true,
       tabActiva: 0,
       pasoActual: 1,
+      firmantesData: [],
     };
 
     /* ── Referencia a elementos ── */
@@ -1070,6 +1082,28 @@
         }
       }
 
+      /* Restaurar datos guardados al cambiar de vista */
+      state.firmantesData.slice(0, state.cantidadFirmantes).forEach((d, i) => {
+        const nEl = document.getElementById(`nombre-${i}`);
+        const aEl = document.getElementById(`apellido-${i}`);
+        const dEl = document.getElementById(`dni-${i}`);
+        const eEl = document.getElementById(`email-${i}`);
+        if (nEl)  nEl.value  = d.nombre;
+        if (aEl)  aEl.value  = d.apellido;
+        if (dEl)  dEl.value  = d.dni;
+        if (eEl)  eEl.value  = d.email;
+        const label = (d.nombre || d.apellido)
+          ? `${d.nombre} ${d.apellido}`.trim()
+          : `Firmante ${i + 1}`;
+        if (state.vistaTab) {
+          const tabBtn = document.getElementById(`tab-btn-${i}`);
+          if (tabBtn) { const sp = tabBtn.querySelector('span'); if (sp) sp.textContent = label; }
+        } else {
+          const prev = document.getElementById(`preview-nombre-${i}`);
+          if (prev) prev.textContent = (d.nombre || d.apellido) ? label : '';
+        }
+      });
+
     }
 
     /* ── Actualizar indicador de pasos ── */
@@ -1100,9 +1134,23 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    /* ── Guardar datos actuales de firmantes ── */
+    function recogerDatosFirmantes() {
+      state.firmantesData = [];
+      for (let i = 0; i < state.cantidadFirmantes; i++) {
+        state.firmantesData.push({
+          nombre:   (document.getElementById(`nombre-${i}`)   || {}).value || '',
+          apellido: (document.getElementById(`apellido-${i}`) || {}).value || '',
+          dni:      (document.getElementById(`dni-${i}`)      || {}).value || '',
+          email:    (document.getElementById(`email-${i}`)    || {}).value || '',
+        });
+      }
+    }
+
     /* ── Controles +/- ── */
     btnMenos.addEventListener('click', () => {
       if (state.cantidadFirmantes > 1) {
+        recogerDatosFirmantes();
         state.cantidadFirmantes--;
         cantidadInput.value = state.cantidadFirmantes;
         renderFirmantes();
@@ -1110,7 +1158,8 @@
     });
 
     btnMas.addEventListener('click', () => {
-      if (state.cantidadFirmantes < 10) {
+      if (state.cantidadFirmantes < 3) {
+        recogerDatosFirmantes();
         state.cantidadFirmantes++;
         cantidadInput.value = state.cantidadFirmantes;
         renderFirmantes();
@@ -1121,7 +1170,8 @@
     cantidadInput.addEventListener('change', () => {
       let val = parseInt(cantidadInput.value, 10);
       if (isNaN(val) || val < 1) val = 1;
-      if (val > 10) val = 10;
+      if (val > 3) val = 3;
+      recogerDatosFirmantes();
       state.cantidadFirmantes = val;
       cantidadInput.value = val;
       renderFirmantes();
@@ -1130,6 +1180,7 @@
     /* ── Toggle vista lista / tabs ── */
     btnVistaLista.addEventListener('click', () => {
       if (!state.vistaTab) return;
+      recogerDatosFirmantes();
       state.vistaTab = false;
       state.tabActiva = 0;
       btnVistaLista.classList.add('active');
@@ -1139,6 +1190,7 @@
 
     btnVistaTabs.addEventListener('click', () => {
       if (state.vistaTab) return;
+      recogerDatosFirmantes();
       state.vistaTab = true;
       state.tabActiva = 0;
       btnVistaTabs.classList.add('active');
@@ -1215,6 +1267,11 @@
       const nroOpInvalido = !nroOp.value.trim();
       setFieldError('nro-operacion', 'error-nro-operacion', nroOpInvalido);
       if (nroOpInvalido) valido = false;
+
+      const expiresInp = document.getElementById('expires-at');
+      const expiresInvalido = !expiresInp.value;
+      setFieldError('expires-at', 'error-expires-at', expiresInvalido);
+      if (expiresInvalido) valido = false;
 
       const docInput = document.getElementById('documento');
       const sinDoc = docInput.files.length === 0;
@@ -1298,6 +1355,15 @@
       const docFile       = document.getElementById('documento').files[0];
       const tipoDocumento = document.getElementById('tipo-documento').value;
       const nroOperacion  = document.getElementById('nro-operacion').value.trim();
+      const _expRaw = document.getElementById('expires-at').value; // "YYYY-MM-DDTHH:MM"
+      const _expD   = new Date(_expRaw);
+      const _tzOff  = _expD.getTimezoneOffset();          // positivo = detrás de UTC
+      const _sign   = _tzOff <= 0 ? '+' : '-';
+      const _abs    = Math.abs(_tzOff);
+      const _p      = n => String(n).padStart(2, '0');
+      const expiresAt = `${_expD.getFullYear()}-${_p(_expD.getMonth()+1)}-${_p(_expD.getDate())}` +
+                        `T${_p(_expD.getHours())}:${_p(_expD.getMinutes())}:00` +
+                        `${_sign}${_p(Math.floor(_abs/60))}:${_p(_abs%60)}`;
       const firmantes = [];
 
       for (let i = 0; i < state.cantidadFirmantes; i++) {
@@ -1315,7 +1381,7 @@
       btnEnviar.innerHTML = `<span class="spinner"></span> Enviando...`;
 
       try {
-        await enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion);
+        await enviarSignZen(firmantes, docFile, tipoDocumento, nroOperacion, expiresAt);
 
         modalBody.innerHTML = `
           El documento <strong>"${sanitize(docFile.name)}"</strong> fue enviado correctamente.<br/>
@@ -1405,6 +1471,10 @@
             <span class="summary-value">${sanitize(nroOp)}</span>
           </div>
           <div class="summary-row">
+            <span class="summary-label">Vencimiento</span>
+            <span class="summary-value">${sanitize(document.getElementById('expires-at').value.replace('T', ' '))}</span>
+          </div>
+          <div class="summary-row">
             <span class="summary-label">Archivo</span>
             <span class="summary-value">${sanitize(archivoNom)}</span>
           </div>
@@ -1442,6 +1512,14 @@
     }
 
     /* ── Init ── */
+    (function initExpiresAt() {
+      const inp  = document.getElementById('expires-at');
+      const pad  = n => String(n).padStart(2, '0');
+      const now  = new Date();
+      const def  = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      inp.min    = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T00:00`;
+      inp.value  = `${def.getFullYear()}-${pad(def.getMonth()+1)}-${pad(def.getDate())}T${pad(def.getHours())}:${pad(def.getMinutes())}`;
+    })();
     renderFirmantes();
   </script>
 </body>
