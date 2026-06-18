@@ -802,15 +802,23 @@
         <label for="tipo-documento">Tipo de Documento <span class="required-star">*</span></label>
         <select id="tipo-documento">
           <option value="">-- Seleccioná el tipo --</option>
-          <option value="Carta Oferta">Carta Oferta</option>
-          <option value="Reserva">Reserva</option>
-          <option value="Contrato de Alquiler">Contrato de Alquiler</option>
-          <option value="Boleto de Compra/Venta">Boleto de Compra/Venta</option>
-          <option value="Autorización de Venta">Autorización de Venta</option>
+          <option value="Aceptación de Oferta">Aceptación de Oferta</option>
           <option value="Autorización de Alquiler">Autorización de Alquiler</option>
+          <option value="Autorización de Venta">Autorización de Venta</option>
+          <option value="Boleto de Compra/Venta">Boleto de Compra/Venta</option>
+          <option value="Carta Oferta">Carta Oferta</option>
+          <option value="Contrato de Alquiler">Contrato de Alquiler</option>
+          <option value="Refuerzo de compra/venta">Refuerzo de compra/venta</option>
+          <option value="Reserva">Reserva</option>
           <option value="Otros">Otros</option>
         </select>
         <span class="field-error" id="error-tipo-documento">Seleccioná el tipo de documento.</span>
+      </div>
+
+      <div class="form-group" id="grupo-otros-descripcion" style="display:none">
+        <label for="otros-descripcion">Descripción del documento <span class="required-star">*</span></label>
+        <input type="text" id="otros-descripcion" placeholder="Ej: Acuerdo de exclusividad" maxlength="120" />
+        <span class="field-error" id="error-otros-descripcion">Ingresá una descripción para el documento.</span>
       </div>
 
       <div class="form-group">
@@ -1263,6 +1271,13 @@
       setFieldError('tipo-documento', 'error-tipo-documento', tipoDocInvalido);
       if (tipoDocInvalido) valido = false;
 
+      if (tipoDoc.value === 'Otros') {
+        const otrosDesc = document.getElementById('otros-descripcion');
+        const otrosInvalido = !otrosDesc.value.trim();
+        setFieldError('otros-descripcion', 'error-otros-descripcion', otrosInvalido);
+        if (otrosInvalido) valido = false;
+      }
+
       const nroOp = document.getElementById('nro-operacion');
       const nroOpInvalido = !nroOp.value.trim();
       setFieldError('nro-operacion', 'error-nro-operacion', nroOpInvalido);
@@ -1353,7 +1368,10 @@
     /* ── Envío ── */
     btnEnviar.addEventListener('click', async () => {
       const docFile       = document.getElementById('documento').files[0];
-      const tipoDocumento = document.getElementById('tipo-documento').value;
+      const _tipoRaw = document.getElementById('tipo-documento').value;
+      const tipoDocumento = _tipoRaw === 'Otros'
+        ? (document.getElementById('otros-descripcion').value.trim() || 'Otros')
+        : _tipoRaw;
       const nroOperacion  = document.getElementById('nro-operacion').value.trim();
       const _expRaw = document.getElementById('expires-at').value; // "YYYY-MM-DDTHH:MM"
       const _expD   = new Date(_expRaw);
@@ -1412,6 +1430,8 @@
     function limpiarFormulario() {
       /* Resetear tipo de documento y nro. de operación */
       document.getElementById('tipo-documento').value = '';
+      document.getElementById('otros-descripcion').value = '';
+      document.getElementById('grupo-otros-descripcion').style.display = 'none';
       document.getElementById('nro-operacion').value = '';
 
       /* Resetear cantidad de firmantes y tab activa */
@@ -1455,7 +1475,10 @@
     /* ── Resumen (paso 3) ── */
     function renderResumen() {
       const resumen    = document.getElementById('resumen-container');
-      const tipoDoc    = document.getElementById('tipo-documento').value;
+      const _tipoRaw   = document.getElementById('tipo-documento').value;
+      const tipoDoc    = _tipoRaw === 'Otros'
+        ? (document.getElementById('otros-descripcion').value.trim() || 'Otros')
+        : _tipoRaw;
       const nroOp      = document.getElementById('nro-operacion').value.trim();
       const archivoNom = document.getElementById('file-name').textContent;
 
@@ -1510,6 +1533,19 @@
       html += `</div>`;
       resumen.innerHTML = html;
     }
+
+    /* ── Mostrar/ocultar campo "Otros" ── */
+    document.getElementById('tipo-documento').addEventListener('change', function () {
+      const grupo = document.getElementById('grupo-otros-descripcion');
+      if (this.value === 'Otros') {
+        grupo.style.display = '';
+        document.getElementById('otros-descripcion').focus();
+      } else {
+        grupo.style.display = 'none';
+        document.getElementById('otros-descripcion').value = '';
+        setFieldError('otros-descripcion', 'error-otros-descripcion', false);
+      }
+    });
 
     /* ── Init ── */
     (function initExpiresAt() {
